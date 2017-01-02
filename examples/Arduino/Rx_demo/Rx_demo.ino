@@ -9,7 +9,7 @@
 '  
 '-----------------------------------------------------------------------------*/
 #include <cc1100.h>
-#include <PinChangeInt.h>
+#include <PinChangeInterrupt.h>
 
 //---------------------------=[Global variables]=----------------------------
 uint32_t rf_timecode = 0;

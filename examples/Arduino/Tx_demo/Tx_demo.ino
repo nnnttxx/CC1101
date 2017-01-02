@@ -9,7 +9,7 @@
 '  
 '-----------------------------------------------------------------------------*/
 #include <cc1100.h>
-#include <PinChangeInt.h>
+#include <PinChangeInterrupt.h>
 
 //---------------------------=[Global variables]=----------------------------
 
@@ -76,7 +76,7 @@ void loop()
     Pktlen = 0x07;                                               //set packet len to 0x13
    
     detachPinChangeInterrupt(GDO2);                              //disable pin change interrupt
-    cc1100.sent_packet(My_addr, Rx_addr, Tx_fifo, Pktlen, 1);    //sents package over air. ACK is received via GPIO polling
+    cc1100.send_packet(My_addr, Rx_addr, Tx_fifo, Pktlen, 1);    //sents package over air. ACK is received via GPIO polling
     attachPinChangeInterrupt(GDO2, rf_available_int, HIGH);      //enable pin change interrupt           
 
     Serial.print(F("tx_time: "));Serial.print(millis()-time_stamp);Serial.println(F("ms"));
