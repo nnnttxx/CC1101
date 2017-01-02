@@ -1,21 +1,16 @@
-/*----------------------------------------------------------------------------*/
-/*                 Write eeprom data to internal EEPROM memory                /*
-/*                 by Chris                                                   /*
-/*                                                                            /*
-/*----------------------------------------------------------------------------*/
+//----------------------------------------------------------------------------//
+//                 Write eeprom data to internal EEPROM memory                //
+//                 by Chris                                                   //
+//                                                                            //
+//----------------------------------------------------------------------------//
 
 #include <EEPROM.h>
+#include <cc1100.h>
 
-#define EEPROM_ADDRESS_CC1100_FREQUENCY  0x1F4
-#define EEPROM_ADDRESS_CC1100_MODE       0x1F5
-#define EEPROM_ADDRESS_CC1100_MY_ADDR    0x1F6
-#define EEPROM_ADDRESS_CC1100_CHANNEL    0x1F7
-
-#define CC1100_FREQUENCY 0x03
-#define CC1100_MODE      0x04
+#define CC1100_FREQUENCY CC1100_FREQ_868MHZ
+#define CC1100_MODE      CC1100_MODE_MSK_250_kb
 #define CC1100_MY_ADDR   0x05
 #define CC1100_CHANNEL   0x01
-
 
 int a = 0;
 int value;
