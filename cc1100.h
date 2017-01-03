@@ -24,8 +24,8 @@
 #define MISO_PIN 12
 #define MOSI_PIN 11
 #define SS_PIN   10
-#define GDO0     A1     
-#define GDO2     A2                //2 main, 5 remote, 3 M16
+#define GDO0     A0                // for temperature measurement      
+#define GDO2      3                // rx interrrupt
                                                          
 /*----------------------[CC1100 - misc]---------------------------------------*/
 #define CFG_REGISTER        0x2F  //47 registers

@@ -1057,7 +1057,7 @@ uint16_t CC1100::get_tempK(void)
   
 	#if CC1100_DEBUG == 1
 		//Serial.print(F("Temp:"));Serial.print(ptemp_Arr[0]);Serial.print(F("."));Serial.println(ptemp_Arr[1]);
-    Serial.print(F("Temp:"));Serial.print(temperatureK); Serial.print(F("Kelvin"));
+    Serial.print(F("Temperature: "));Serial.print(temperatureK); Serial.println(F(" Kelvin"));
 	#endif
 
 	spi_write_register(PTEST,0x7F);				//writes 0x7F back to PTest (app. note)

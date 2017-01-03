@@ -18,7 +18,7 @@ int value;
 //-----------------------------------------------------------------------------
 
 //------------------[ paste data from array python tool here ]-----------------
-#define EEPROM_LEN 313
+#define EEPROM_LEN EEPROM_ADDRESS_CC1100_CHANNEL + 1
 uint8_t eeprom_cc1101[EEPROM_LEN] = {
   //00   01   02   03   04   05   06   07   08   09   0A   0B   0C   0D   0E   0F
   0x06, 0x2E, 0x06, 0x47, 0xD3, 0x91, 0xFF, 0x04, 0x05, 0x00, 0x00, 0x06, 0x00, 0x21, 0x65, 0x6A,
