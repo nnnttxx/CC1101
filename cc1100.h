@@ -10,7 +10,7 @@
 #define CC1100_DEBUG 1          //must defined in main project
 
 /*----------------------------------[standard]--------------------------------*/
-#define TRUE  1
+#define TRUE  !FALSE
 #define FALSE 0
 
 //|=====================[ setting EEPROM addresses]=============================
@@ -24,8 +24,8 @@
 #define MISO_PIN 12
 #define MOSI_PIN 11
 #define SS_PIN   10
-#define GDO2     3                //2 main, 5 remote, 3 M16
-#define GDO0     2
+#define GDO0     A1     
+#define GDO2     A2                //2 main, 5 remote, 3 M16
                                                          
 /*----------------------[CC1100 - misc]---------------------------------------*/
 #define CFG_REGISTER        0x2F  //47 registers
@@ -173,7 +173,7 @@ class CC1100
     void reset(void);
     void wakeup(void);
     void powerdown(void);
-    void silde(void);
+    void sidle(void);
     void transmit(void);
     void receive(void);
 
@@ -200,7 +200,7 @@ class CC1100
     int8_t rssi_convert(uint8_t Rssi);
     uint8_t check_crc(uint8_t lqi);
     uint8_t lqi_convert(uint8_t lqi);
-    uint8_t get_temp(uint8_t *ptemp_Arr);
+    uint16_t get_tempK(void);
 
     void set_myaddr(uint8_t addr);
     void set_channel(uint8_t channel);

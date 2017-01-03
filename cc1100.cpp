@@ -337,7 +337,7 @@ void CC1100::reset(void)			      // reset defined in cc1100 datasheet
 //------------------------[set Power Down]--------------------------------------
 void CC1100::powerdown(void)
 {
-	silde();
+	sidle();
 	spi_write_strobe(SPWD);           // CC!!00 Power Down
 }
 //-----------------------------[end]--------------------------------------------
@@ -508,14 +508,14 @@ void CC1100::show_main_settings(void)
 //-------------------------------[end]------------------------------------------
 
 //----------------------------[idle mode]---------------------------------------
-void CC1100::silde(void)
+void CC1100::sidle(void)
 {
 	uint8_t marcstate;
 
 	spi_write_strobe(SIDLE);								  //sets to idle first. must be in
 	marcstate = 0xFF;								        	//set unknown/dummy state value
 
-	while(marcstate != 0x01)						    	//0x01 = SILDE
+	while(marcstate != 0x01)						    	//0x01 = SIDLE
 	{
 		marcstate = (spi_read_register(MARCSTATE) & 0x1F);		//read out state of cc1100 to be sure in RX
 		//uart_puthex_byte(marcstate);
@@ -549,7 +549,7 @@ void CC1100::receive(void)
 {
 	uint8_t marcstate;
 
-	silde();			                             //sets to idle first.
+	sidle();			                             //sets to idle first.
 	spi_write_strobe(SRX);                     //writes receive strobe (receive mode)
 	marcstate = 0xFF;	                         //set unknown/dummy state value
 
@@ -600,7 +600,7 @@ void CC1100::rx_payload_burst(uint8_t rxbuffer[], uint8_t &pktlen)
 		{
 				//Serial.print(F("bad RX buffer!"));
 		}
-	silde();
+	sidle();
 	spi_write_strobe(SFRX);_delay_us(100);
 	receive();
 }
@@ -1025,14 +1025,15 @@ uint8_t CC1100::check_crc(uint8_t lqi)
 }
 //-------------------------------[end]------------------------------------------
 
-//----------------------------[get temp]----------------------------------------
-uint8_t CC1100::get_temp(uint8_t *ptemp_Arr)
+//------------------[get temperature in Kelvin]---------------------------------
+uint16_t CC1100::get_tempK(void)
 {
 	const uint8_t num_samples = 8;
   uint16_t adc_result = 0;
-	uint32_t temperature = 0;
+	//uint32_t temperature = 0;
+  uint32_t temperatureK = 0;
 
-	silde();									            //sets CC1100 into IDLE
+	sidle();									            //sets CC1100 into IDLE
 	spi_write_register(PTEST,0xBF);				//enable temp sensor
 	_delay_ms(50);												//wait a bit
 
@@ -1044,19 +1045,26 @@ uint8_t CC1100::get_temp(uint8_t *ptemp_Arr)
   adc_result = adc_result / num_samples;
 	//Serial.println(adc_result);
 
-	temperature = (adc_result * CC1100_TEMP_ADC_MV) / CC1100_TEMP_CELS_CO;
+  //temperature = (adc_result * CC1100_TEMP_ADC_MV) / CC1100_TEMP_CELS_CO;
+	temperatureK = (adc_result * CC1100_TEMP_ADC_MV) - 651; // 0.651V offset at -40degC
+  temperatureK /= CC1100_TEMP_CELS_CO;
+  temperatureK += 233.15;                                   // add 273.15K - 40
 
+  /*  
 	ptemp_Arr[0] = temperature / 10;      //cut last digit
 	ptemp_Arr[1] = temperature % 10;      //isolate last digit
-
+  */
+  
 	#if CC1100_DEBUG == 1
-		Serial.print(F("Temp:"));Serial.print(ptemp_Arr[0]);Serial.print(F("."));Serial.println(ptemp_Arr[1]);
+		//Serial.print(F("Temp:"));Serial.print(ptemp_Arr[0]);Serial.print(F("."));Serial.println(ptemp_Arr[1]);
+    Serial.print(F("Temp:"));Serial.print(temperatureK); Serial.print(F("Kelvin"));
 	#endif
 
 	spi_write_register(PTEST,0x7F);				//writes 0x7F back to PTest (app. note)
 
 	receive();
-	return (*ptemp_Arr);
+	//return (ptemp_Arr);
+  return (uint16_t) temperatureK;
 }
 //-------------------------------[end]------------------------------------------
 
