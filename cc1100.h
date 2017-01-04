@@ -2,8 +2,9 @@
 #define cc1100_H
 
 #include <Arduino.h>
-#include <avr/eeprom.h>
+//#include <avr/eeprom.h>
 #include <util/delay.h>
+#include <avr/pgmspace.h>
 
 
 /*------------------------------[debug output 1/0]----------------------------*/
@@ -14,10 +15,10 @@
 #define FALSE 0
 
 //|=====================[ setting EEPROM addresses]=============================
-#define EEPROM_ADDRESS_CC1100_FREQUENCY 0x1F4  //ISM band
-#define EEPROM_ADDRESS_CC1100_MODE      0x1F5  //modulation mode
-#define EEPROM_ADDRESS_CC1100_MY_ADDR   0x1F6  //receiver address
-#define EEPROM_ADDRESS_CC1100_CHANNEL   0x1F7  //channel number
+#define EEPROM_ADDRESS_CC1100_FREQUENCY 0x000  //ISM band
+#define EEPROM_ADDRESS_CC1100_MODE      0x001  //modulation mode
+#define EEPROM_ADDRESS_CC1100_MY_ADDR   0x002  //receiver address
+#define EEPROM_ADDRESS_CC1100_CHANNEL   0x003  //channel number
 
 //**************************** pins ******************************************//
 #define SCK_PIN  13
@@ -28,10 +29,11 @@
 #define GDO2      3                // rx interrrupt
                                                          
 /*----------------------[CC1100 - misc]---------------------------------------*/
-#define CFG_REGISTER        0x2F  //47 registers
-#define FIFOBUFFER          0x42  //size of Fifo Buffer
-#define RSSI_OFFSET_868MHZ  0x4E  //dec = 74
-#define TX_RETRIES_MAX      0x05  //tx_retries_max
+#define CFG_REGISTER        47  
+#define PA_TABLESIZE         8
+#define FIFOBUFFER          66  //size of Fifo Buffer
+#define RSSI_OFFSET_868MHZ  74  //dec = 74
+#define TX_RETRIES_MAX       5 //tx_retries_max
 #define ACK_TIMEOUT          100    //ACK timeout in ms
 #define CC1100_COMPARE_REGISTER 0x00  //register compare 0=no compare 1=compare
 #define BROADCAST_ADDRESS       0x00  //broadcast address

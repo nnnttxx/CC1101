@@ -10,10 +10,7 @@
 '-----------------------------------------------------------------------------*/
 #include <cc1100.h>
 
-//CC1100 cc1100;
-
-//-------------------[global EEPROM default settings 868 Mhz]-------------------
-static uint8_t cc1100_GFSK_1_2_kb[] EEMEM = {
+const uint8_t cc1100_GFSK_1_2_kb[] PROGMEM = {
 					0x07,  // IOCFG2        GDO2 Output Pin Configuration
 					0x2E,  // IOCFG1        GDO1 Output Pin Configuration
 				  0x80,  // IOCFG0        GDO0 Output Pin Configuration
@@ -63,7 +60,7 @@ static uint8_t cc1100_GFSK_1_2_kb[] EEMEM = {
 					0x0B   // TEST0         Various Test Settings
 				};
 
-static uint8_t cc1100_GFSK_38_4_kb[] EEMEM = {
+const uint8_t cc1100_GFSK_38_4_kb[] PROGMEM = {
 					0x07,  // IOCFG2        GDO2 Output Pin Configuration
 					0x2E,  // IOCFG1        GDO1 Output Pin Configuration
 				  0x80,  // IOCFG0        GDO0 Output Pin Configuration
@@ -113,7 +110,7 @@ static uint8_t cc1100_GFSK_38_4_kb[] EEMEM = {
 					0x0B   // TEST0         Various Test Settings
 				};
 
-static uint8_t cc1100_GFSK_100_kb[] EEMEM = {
+const uint8_t cc1100_GFSK_100_kb[] PROGMEM = {
 					0x07,  // IOCFG2        GDO2 Output Pin Configuration
 					0x2E,  // IOCFG1        GDO1 Output Pin Configuration
 					0x80,  // IOCFG0        GDO0 Output Pin Configuration
@@ -162,7 +159,7 @@ static uint8_t cc1100_GFSK_100_kb[] EEMEM = {
 			   	0x0B   // TEST0         Various Test Settings
 				};
 
-static uint8_t cc1100_MSK_250_kb[] EEMEM = {
+const uint8_t cc1100_MSK_250_kb[] PROGMEM = {
 					0x07,  // IOCFG2        GDO2 Output Pin Configuration
 				  0x2E,  // IOCFG1        GDO1 Output Pin Configuration
 					0x80,  // IOCFG0        GDO0 Output Pin Configuration
@@ -212,7 +209,7 @@ static uint8_t cc1100_MSK_250_kb[] EEMEM = {
 					0x0B   // TEST0         Various Test Settings
 				};
 
-static uint8_t cc1100_MSK_500_kb[] EEMEM = {
+const uint8_t cc1100_MSK_500_kb[] PROGMEM = {
 					0x07,  // IOCFG2        GDO2 Output Pin Configuration
 					0x2E,  // IOCFG1        GDO1 Output Pin Configuration
 					0x80,  // IOCFG0        GDO0 Output Pin Configuration
@@ -262,7 +259,7 @@ static uint8_t cc1100_MSK_500_kb[] EEMEM = {
 					0x0B   // TEST0         Various Test Settings
 				};
 
-static uint8_t cc1100_OOK_4_8_kb[] EEMEM = {
+const uint8_t cc1100_OOK_4_8_kb[] PROGMEM = {
 					0x06,  // IOCFG2        GDO2 Output Pin Configuration
 				  0x2E,  // IOCFG1        GDO1 Output Pin Configuration
 					0x06,  // IOCFG0        GDO0 Output Pin Configuration
@@ -313,15 +310,13 @@ static uint8_t cc1100_OOK_4_8_kb[] EEMEM = {
 				};
 
                            //Patable index: -30  -20- -15  -10   0    5    7    10 dBm
-static uint8_t patable_power_315[] EEMEM = {0x17,0x1D,0x26,0x69,0x51,0x86,0xCC,0xC3};
-static uint8_t patable_power_433[] EEMEM = {0x6C,0x1C,0x06,0x3A,0x51,0x85,0xC8,0xC0};
-static uint8_t patable_power_868[] EEMEM = {0x03,0x17,0x1D,0x26,0x50,0x86,0xCD,0xC0};
-static uint8_t patable_power_915[] EEMEM = {0x0B,0x1B,0x6D,0x67,0x50,0x85,0xC9,0xC1};
-//static uint8_t patable_power_2430[] EEMEM = {0x44,0x84,0x46,0x55,0xC6,0x6E,0x9A,0xFE};
+const uint8_t patable_power_315[] PROGMEM = {0x17,0x1D,0x26,0x69,0x51,0x86,0xCC,0xC3};
+const uint8_t patable_power_433[] PROGMEM = {0x6C,0x1C,0x06,0x3A,0x51,0x85,0xC8,0xC0};
+const uint8_t patable_power_868[] PROGMEM = {0x03,0x17,0x1D,0x26,0x50,0x86,0xCD,0xC0};
+const uint8_t patable_power_915[] PROGMEM = {0x0B,0x1B,0x6D,0x67,0x50,0x85,0xC9,0xC1};
+//const uint8_t patable_power_2430[] PROGMEM = {0x44,0x84,0x46,0x55,0xC6,0x6E,0x9A,0xFE};
 
-//-----------------------------[END]--------------------------------------------
 
-//-------------------------[CC1100 reset function]------------------------------
 void CC1100::reset(void)			      // reset defined in cc1100 datasheet
 {
   digitalWrite(SS_PIN, LOW);
@@ -332,17 +327,15 @@ void CC1100::reset(void)			      // reset defined in cc1100 datasheet
 	spi_write_strobe(SRES);
 	_delay_ms(1);
 }
-//-----------------------------[END]--------------------------------------------
 
-//------------------------[set Power Down]--------------------------------------
+
 void CC1100::powerdown(void)
 {
 	sidle();
 	spi_write_strobe(SPWD);           // CC!!00 Power Down
 }
-//-----------------------------[end]--------------------------------------------
 
-//---------------------------[WakeUp]-------------------------------------------
+
 void CC1100::wakeup(void)
 {
 	digitalWrite(SS_PIN, LOW);
@@ -351,15 +344,14 @@ void CC1100::wakeup(void)
 	_delay_us(10);
 	receive();// go to RX Mode
 }
-//-----------------------------[end]--------------------------------------------
 
-//-------------------[CC1100 init functions "8.9ms"]----------------------------
+
 uint8_t CC1100::begin(volatile uint8_t &My_addr)
 {
-	uint8_t cc1100_freq_select, cc1100_mode_select, cc1100_channel_select;
+	//uint8_t cc1100_freq_select, cc1100_mode_select, cc1100_channel_select;
 	uint8_t partnum, version;
 
-	pinMode(GDO0, INPUT);						       //setup SPI ports
+	pinMode(GDO0, INPUT);						       //setup GPIO ports
 	pinMode(GDO2, INPUT);
 
 	#ifdef CC1100_DEBUG
@@ -395,45 +387,7 @@ uint8_t CC1100::begin(volatile uint8_t &My_addr)
 		Serial.print(F("Version:"));
 		uart_puthex_byte(version);
 		Serial.println();
-	#endif
-
-	//reads setting parameters from eeprom
-	My_addr = eeprom_read_byte((const uint8_t*)EEPROM_ADDRESS_CC1100_MY_ADDR);
-	cc1100_freq_select = eeprom_read_byte((const uint8_t*)EEPROM_ADDRESS_CC1100_FREQUENCY);
-	cc1100_mode_select = eeprom_read_byte((const uint8_t*)EEPROM_ADDRESS_CC1100_MODE);
-	cc1100_channel_select = eeprom_read_byte((const uint8_t*)EEPROM_ADDRESS_CC1100_CHANNEL);
-
-	//if no valid settings are available, CC100 Powerdown and SPI disable
-	if(My_addr == 0xFF ||
-		cc1100_freq_select == 0xFF ||
-		cc1100_mode_select == 0xFF ||
-		cc1100_channel_select == 0xFF)
-		{
-			#if CC1100_DEBUG == 1
-				Serial.print(F("no EEPROM settings..."));
-				Serial.println();
-				end();												//CC1100 Powerdown and disable SPI bus
-			#endif
-
-			return FALSE;
-		}
-
-	//set modulation mode
-	set_mode(cc1100_mode_select);
-
-	//set ISM band
-	set_ISM(cc1100_freq_select);
-
-	//set channel
-	set_channel(cc1100_channel_select);
-
-	//set output power amplifier
-	set_output_power_level(0);					//set PA to 0dBm as default
-
-	//set my receiver address
-	set_myaddr(My_addr);						    //My_Addr from EEPROM to global variable
-
-	#if CC1100_DEBUG == 1
+    
 		Serial.println(F("...done"));
 	#endif
 
@@ -442,27 +396,49 @@ uint8_t CC1100::begin(volatile uint8_t &My_addr)
 
 	return TRUE;
 }
-//-------------------------------[end]------------------------------------------
 
-//-----------------[finish's the CC1100 operation]------------------------------
+
 void CC1100::end(void)
 {
 	powerdown();																	//power down CC1100
 	spi_end();																		//disable SPI Interface
 }
-//-------------------------------[end]------------------------------------------
 
-//-----------------------[show all CC1100 registers]----------------------------
+
+void CC1100::show_main_settings(void)
+{
+	#if CC1100_DEBUG == 1
+		Serial.print(F("Mode:"));
+		Serial.print(eeprom_read_byte((const uint8_t*)EEPROM_ADDRESS_CC1100_MODE));
+		Serial.println();
+
+		Serial.print(F("Frequency:"));
+		Serial.print(eeprom_read_byte((const uint8_t*)EEPROM_ADDRESS_CC1100_FREQUENCY));
+		Serial.println();
+
+		Serial.print(F("Channel:"));
+		//Serial.print(eeprom_read_byte((const uint8_t*)EEPROM_ADDRESS_CC1100_CHANNEL));
+    Serial.print(spi_read_register(CHANNR)); 
+		Serial.println();
+
+		Serial.print(F("My_Addr:"));
+		//Serial.print(eeprom_read_byte((const uint8_t*)EEPROM_ADDRESS_CC1100_MY_ADDR));
+    Serial.print(spi_read_register(ADDR));
+		Serial.println();
+	#endif
+}
+
+
 void CC1100::show_register_settings(void)
 {
 	#if CC1100_DEBUG == 1
 		uint8_t config_reg_verify[CFG_REGISTER],Patable_verify[CFG_REGISTER];
 
-		spi_read_burst(READ_BURST,config_reg_verify,CFG_REGISTER);	//reads all 47 config register
-		spi_read_burst(PATABLE_BURST,Patable_verify,8);				//reads output power settings
+		spi_read_burst(READ_BURST,config_reg_verify,CFG_REGISTER);	       //reads all 47 config register
+		spi_read_burst(PATABLE_BURST,Patable_verify,PA_TABLESIZE);				 //reads output power settings
 
 		//show_main_settings();
-		Serial.println(F("Cfg_reg:"));
+		Serial.println(F("Configuration register settings:"));
 
 		for(uint8_t i = 0 ; i < CFG_REGISTER; i++) 		//showes rx_buffer for debug
 			{
@@ -482,32 +458,8 @@ void CC1100::show_register_settings(void)
 		Serial.println();
 	#endif
 }
-//-------------------------------[end]------------------------------------------
 
-//--------------------------[show settings]-------------------------------------
-void CC1100::show_main_settings(void)
-{
-	#if CC1100_DEBUG == 1
-		Serial.print(F("Mode:"));
-		Serial.print(eeprom_read_byte((const uint8_t*)EEPROM_ADDRESS_CC1100_MODE));
-		Serial.println();
 
-		Serial.print(F("Frequency:"));
-		Serial.print(eeprom_read_byte((const uint8_t*)EEPROM_ADDRESS_CC1100_FREQUENCY));
-		Serial.println();
-
-		Serial.print(F("Channel:"));
-		Serial.print(eeprom_read_byte((const uint8_t*)EEPROM_ADDRESS_CC1100_CHANNEL));
-		Serial.println();
-
-		Serial.print(F("My_Addr:"));
-		Serial.print(eeprom_read_byte((const uint8_t*)EEPROM_ADDRESS_CC1100_MY_ADDR));
-		Serial.println();
-	#endif
-}
-//-------------------------------[end]------------------------------------------
-
-//----------------------------[idle mode]---------------------------------------
 void CC1100::sidle(void)
 {
 	uint8_t marcstate;
@@ -520,11 +472,9 @@ void CC1100::sidle(void)
 		marcstate = (spi_read_register(MARCSTATE) & 0x1F);		//read out state of cc1100 to be sure in RX
 		//uart_puthex_byte(marcstate);
 	}
-	//Serial.println();
 }
-//-------------------------------[end]------------------------------------------
 
-//---------------------------[transmit mode]------------------------------------
+
 void CC1100::transmit(void)
 {
 	uint8_t marcstate;
@@ -538,13 +488,11 @@ void CC1100::transmit(void)
 		//uart_puthex_byte(marcstate);
 		_delay_us(100);                          //must be in for ever reason
 	}
-	//Serial.println();
 
 	spi_write_strobe(SFTX);_delay_us(100);		 //flush the Tx_fifo content -> a must for interrupt handling
 }
-//-------------------------------[end]------------------------------------------
 
-//---------------------------[receive mode]-------------------------------------
+
 void CC1100::receive(void)
 {
 	uint8_t marcstate;
@@ -558,11 +506,9 @@ void CC1100::receive(void)
 		marcstate = (spi_read_register(MARCSTATE) & 0x1F);		//read out state of cc1100 to be sure in RX
 		//uart_puthex_byte(marcstate);
 	}
-	//Serial.println();
 }
-//-------------------------------[end]------------------------------------------
 
-//-------------------------[tx_payload_burst]-----------------------------------
+
 void CC1100::tx_payload_burst(uint8_t my_addr, uint8_t rx_addr,
 	                               uint8_t *txbuffer, uint8_t length)
 {
@@ -581,9 +527,8 @@ void CC1100::tx_payload_burst(uint8_t my_addr, uint8_t rx_addr,
 		Serial.println();
 	#endif
 }
-//-------------------------------[end]------------------------------------------
 
-//------------------[rx_payload_burst - package received]-----------------------
+
 void CC1100::rx_payload_burst(uint8_t rxbuffer[], uint8_t &pktlen)
 {
 	uint8_t bytes_in_RXFIFO = spi_read_register(RXBYTES); //reads the number of bytes in RXFIFO
@@ -604,9 +549,8 @@ void CC1100::rx_payload_burst(uint8_t rxbuffer[], uint8_t &pktlen)
 	spi_write_strobe(SFRX);_delay_us(100);
 	receive();
 }
-//-------------------------------[end]------------------------------------------
 
-//---------------------------[sent packet]--------------------------------------
+
 uint8_t CC1100::send_packet(uint8_t my_addr, uint8_t rx_addr, uint8_t *txbuffer,
                             uint8_t pktlen,  uint8_t tx_retries)
 {
@@ -653,9 +597,8 @@ uint8_t CC1100::send_packet(uint8_t my_addr, uint8_t rx_addr, uint8_t *txbuffer,
 
 	return FALSE;																					 //sent failed. too many retries
 }
-//-------------------------------[end]------------------------------------------
 
-//--------------------------[send ACKNOWLEDGE]------------------------------------
+
 void CC1100::send_acknowledge(uint8_t my_addr, uint8_t tx_addr)
 {
 	uint8_t pktlen = 0x06;																//complete Pktlen for ACK packet
@@ -672,8 +615,8 @@ void CC1100::send_acknowledge(uint8_t my_addr, uint8_t tx_addr)
 		Serial.println(F("Ack_sent!"));
 	#endif
 }
-//-------------------------------[end]------------------------------------------
-//----------------------[check if Packet is received]---------------------------
+
+
 uint8_t CC1100::packet_available()
 {
 	if(digitalRead(GDO2) == TRUE)														//if RF package received
@@ -694,9 +637,8 @@ uint8_t CC1100::packet_available()
 		}
 	return FALSE;
 }
-//-------------------------------[end]------------------------------------------
 
-//------------------[check Payload for ACK or Data]-----------------------------
+
 uint8_t CC1100::get_payload(uint8_t rxbuffer[], uint8_t &pktlen, uint8_t &my_addr,
 	                           uint8_t &sender, int8_t &rssi_dbm, uint8_t &lqi)
 {
@@ -752,9 +694,8 @@ uint8_t CC1100::get_payload(uint8_t rxbuffer[], uint8_t &pktlen, uint8_t &my_add
 			return TRUE;
 		}
 }
-//-------------------------------[end]------------------------------------------
 
-//-------------------------[check ACKNOLAGE]------------------------------------
+
 uint8_t CC1100::check_acknowledge(uint8_t *rxbuffer, uint8_t pktlen, uint8_t sender, uint8_t my_addr)
 {
 	//extern volatile uint8_t My_addr;
@@ -809,79 +750,100 @@ uint8_t CC1100::wait_for_packet(uint8_t milliseconds)
     Serial.println(F("no packet received!"));
     return FALSE;
 }
-//-------------------------------[end]------------------------------------------
 
-//--------------------------[tx_fifo_erase]-------------------------------------
+
 void CC1100::tx_fifo_erase(uint8_t *txbuffer)
 {
 	memset(txbuffer, 0, sizeof(FIFOBUFFER));				  //erased the TX_fifo array content to "0"
 }
-//-------------------------------[end]------------------------------------------
 
-//--------------------------[rx_fifo_erase]-------------------------------------
+
 void CC1100::rx_fifo_erase(uint8_t *rxbuffer)
 {
  	memset(rxbuffer, 0, sizeof(FIFOBUFFER));				  //erased the RX_fifo array content to "0"
 }
-//-------------------------------[end]------------------------------------------
 
-//------------------------[set CC1100 address]----------------------------------
+
 void CC1100::set_myaddr(uint8_t addr)
 {
 	spi_write_register(ADDR,addr);									//stores MyAddr in the CC1100
 	eeprom_write_byte((uint8_t*)EEPROM_ADDRESS_CC1100_MY_ADDR,addr);				//writes byte to eeprom
 }
-//-------------------------------[end]------------------------------------------
 
-//---------------------------[set channel]--------------------------------------
+
 void CC1100::set_channel(uint8_t channel)
 {
 	spi_write_register(CHANNR,channel);					//stores the new channel # in the CC1100
 	eeprom_write_byte((uint8_t*)EEPROM_ADDRESS_CC1100_CHANNEL,channel);		//writes byte to eeprom
 }
-//-------------------------------[end]------------------------------------------
 
-//-----------------------[set modulation mode]----------------------------------
+
 void CC1100::set_mode(uint8_t mode)
 {
-	uint8_t Cfg_reg[CFG_REGISTER];
+	uint8_t Cfg_reg[CFG_REGISTER], i;
 
 	switch (mode)
 	{
 		case CC1100_MODE_GFSK_1_2_kb:
-					eeprom_read_block(Cfg_reg,cc1100_GFSK_1_2_kb,CFG_REGISTER);			  //sets up settings for GFSK 1,2 kbit mode/speed
+					//eeprom_read_block(Cfg_reg,cc1100_GFSK_1_2_kb,CFG_REGISTER);			  //sets up settings for GFSK 1,2 kbit mode/speed
+          for(i = 0; i < CFG_REGISTER; i++)
+          {
+            Cfg_reg[i] = pgm_read_byte_near(cc1100_GFSK_1_2_kb + i);
+          }
 					break;
 		case CC1100_MODE_GFSK_38_4_kb:
-					eeprom_read_block(Cfg_reg,cc1100_GFSK_38_4_kb,CFG_REGISTER);			//sets up settings for GFSK 38,4 kbit mode/speed
+					//eeprom_read_block(Cfg_reg,cc1100_GFSK_38_4_kb,CFG_REGISTER);			//sets up settings for GFSK 38,4 kbit mode/speed
+          for(i = 0; i < CFG_REGISTER; i++)
+          {
+            Cfg_reg[i] = pgm_read_byte_near(cc1100_GFSK_38_4_kb + i);
+          }
 					break;
 		case CC1100_MODE_GFSK_100_kb:
-					eeprom_read_block(Cfg_reg,cc1100_GFSK_100_kb,CFG_REGISTER);				//sets up settings for GFSK 100 kbit mode/speed
+					//eeprom_read_block(Cfg_reg,cc1100_GFSK_100_kb,CFG_REGISTER);				//sets up settings for GFSK 100 kbit mode/speed
+          for(i = 0; i < CFG_REGISTER; i++)
+          {
+            Cfg_reg[i] = pgm_read_byte_near(cc1100_GFSK_100_kb + i);
+          }
 					break;
 		case CC1100_MODE_MSK_250_kb:
-					eeprom_read_block(Cfg_reg,cc1100_MSK_250_kb,CFG_REGISTER);				//sets up settings for GFSK 38,4 kbit mode/speed
+					//eeprom_read_block(Cfg_reg,cc1100_MSK_250_kb,CFG_REGISTER);				//sets up settings for GFSK 38,4 kbit mode/speed
+          for(i = 0; i < CFG_REGISTER; i++)
+          {
+            Cfg_reg[i] = pgm_read_byte_near(cc1100_MSK_250_kb + i);
+          }
 					break;
 		case CC1100_MODE_MSK_500_kb:
-					eeprom_read_block(Cfg_reg,cc1100_MSK_500_kb,CFG_REGISTER);				//sets up settings for GFSK 38,4 kbit mode/speed
+					//eeprom_read_block(Cfg_reg,cc1100_MSK_500_kb,CFG_REGISTER);				//sets up settings for GFSK 38,4 kbit mode/speed
+          for(i = 0; i < CFG_REGISTER; i++)
+          {
+            Cfg_reg[i] = pgm_read_byte_near(cc1100_MSK_500_kb + i);
+          }
 					break;
 		case CC1100_MODE_OOK_4_8_kb:
-					eeprom_read_block(Cfg_reg,cc1100_OOK_4_8_kb,CFG_REGISTER);				//sets up settings for GFSK 38,4 kbit mode/speed
+					//eeprom_read_block(Cfg_reg,cc1100_OOK_4_8_kb,CFG_REGISTER);				//sets up settings for GFSK 38,4 kbit mode/speed
+          for(i = 0; i < CFG_REGISTER; i++)
+          {
+            Cfg_reg[i] = pgm_read_byte_near(cc1100_OOK_4_8_kb + i);
+          }
 					break;
 		default:
-					eeprom_read_block(Cfg_reg,cc1100_GFSK_38_4_kb,CFG_REGISTER);			//sets up settings for GFSK 38,4 kbit mode/speed
+					//eeprom_read_block(Cfg_reg,cc1100_GFSK_38_4_kb,CFG_REGISTER);			//sets up settings for GFSK 38,4 kbit mode/speed
+          for(i = 0; i < CFG_REGISTER; i++)
+          {        
+            Cfg_reg[i] = pgm_read_byte_near(cc1100_GFSK_38_4_kb + i);
+          }
 					mode = 0x02;
 					break;
 	}
-
-	spi_write_burst(WRITE_BURST,Cfg_reg,CFG_REGISTER);											  //writes all 47 config register
+          
+	spi_write_burst(WRITE_BURST, Cfg_reg, CFG_REGISTER);											  //writes all 47 config register
 	eeprom_write_byte((uint8_t*)EEPROM_ADDRESS_CC1100_MODE,mode);							//sets the cc1100 frequency
 }
-//-------------------------------[end]------------------------------------------
 
-//---------------------------[set ISM Band]-------------------------------------
+
 void CC1100::set_ISM(uint8_t ism_freq)
 {
-	uint8_t freq2, freq1, freq0;
-  uint8_t Patable[8];
+	uint8_t freq2, freq1, freq0, Patable[PA_TABLESIZE], i;
 
 	switch (ism_freq) 												//loads the RF freq which is defined in cc1100_freq_select
 	{
@@ -889,39 +851,63 @@ void CC1100::set_ISM(uint8_t ism_freq)
 					freq2=0x0C;
 					freq1=0x1D;
 					freq0=0x89;
-					eeprom_read_block(Patable,patable_power_315,8);
+					//eeprom_read_block(Patable,patable_power_315,8);
+          for(i = 0; i < PA_TABLESIZE; i++)
+          {        
+            Patable[i] = pgm_read_byte_near(patable_power_315 + i);
+          }          
 					break;
 		case CC1100_FREQ_434MHZ:															//433.92MHz
 					freq2=0x10;
 					freq1=0xB0;
 					freq0=0x71;
-					eeprom_read_block(Patable,patable_power_433,8);
+					//eeprom_read_block(Patable,patable_power_433,8);
+          for(i = 0; i < PA_TABLESIZE; i++)
+          {        
+            Patable[i] = pgm_read_byte_near(patable_power_433 + i);
+          }                   
 					break;
 		case CC1100_FREQ_868MHZ:															//868.3MHz
 					freq2=0x21;
 					freq1=0x65;
 					freq0=0x6A;
-					eeprom_read_block(Patable,patable_power_868,8);
+					//eeprom_read_block(Patable,patable_power_868,8);
+          for(i = 0; i < PA_TABLESIZE; i++)
+          {        
+            Patable[i] = pgm_read_byte_near(patable_power_868 + i);
+          }                   
 					break;
 		case CC1100_FREQ_915MHZ:															//915MHz
 					freq2=0x23;
 					freq1=0x31;
 					freq0=0x3B;
-					eeprom_read_block(Patable,patable_power_915,8);
+					//eeprom_read_block(Patable,patable_power_915,8);
+          for(i = 0; i < PA_TABLESIZE; i++)
+          {        
+            Patable[i] = pgm_read_byte_near(patable_power_915 + i);
+          }                   
 					break;
 		/*
 		case CC1100_FREQ_2430MHZ:															//2430MHz
 					freq2=0x5D;
 					freq1=0x76;
 					freq0=0x27;
-					eeprom_read_block(Patable,patable_power_2430,8);
+					//eeprom_read_block(Patable,patable_power_2430,8);
+          for(i = 0; i < PA_TABLESIZE; i++)
+          {        
+            Patable[i] = pgm_read_byte_near(patable_power_2430 + i);
+          }                   
 					break;
 		*/
 		default:															 //default is 868.3MHz
 					freq2=0x21;
 					freq1=0x65;
 					freq0=0x6A;
-					eeprom_read_block(Patable,patable_power_868,8);		//sets up output power ramp register
+					//eeprom_read_block(Patable,patable_power_868,8);		//sets up output power ramp register
+          for(i = 0; i < PA_TABLESIZE; i++)
+          {        
+            Patable[i] = pgm_read_byte_near(patable_power_868 + i);
+          }                   
 					ism_freq = 0x03;
 					break;
 	}
@@ -930,11 +916,9 @@ void CC1100::set_ISM(uint8_t ism_freq)
 	spi_write_register(FREQ1,freq1);
 	spi_write_register(FREQ0,freq0);
 
-	spi_write_burst(PATABLE_BURST,Patable,8);								//writes output power settings to cc1100
-
+	spi_write_burst(PATABLE_BURST,Patable,PA_TABLESIZE) ;								//writes output power settings to cc1100
 	eeprom_write_byte((uint8_t*)EEPROM_ADDRESS_CC1100_FREQUENCY,ism_freq);	//selects the cc1100 frequency
 }
-//-------------------------------[end]------------------------------------------
 
 /*
 void CC1100::set_freq(uint32_t freq)
@@ -947,14 +931,13 @@ void CC1100::set_freq(uint32_t freq)
     FREQ0 = num & 0xff;
 }*/
 
-//---------------------------[set PATABLE]--------------------------------------
+
 void CC1100::set_patable(uint8_t *patable_arr)
 {
-	spi_write_burst(PATABLE_BURST,patable_arr,8);								//writes output power settings to cc1100	"104us"
+	spi_write_burst(PATABLE_BURST,patable_arr, PA_TABLESIZE);								//writes output power settings to cc1100	"104us"
 }
-//-------------------------------[end]------------------------------------------
 
-//-------------------------[set output power]-----------------------------------
+
 void CC1100::set_output_power_level(int8_t dBm)
 {
 	uint8_t pa = 0xC0;
@@ -970,7 +953,8 @@ void CC1100::set_output_power_level(int8_t dBm)
 
 	spi_write_register(FREND0,pa);
 }
-//-------------------------------[end]------------------------------------------
+
+
 //---------------[set data_whitening ON=TRUE; OFF=FALSE]-------------------------
 void CC1100::set_data_whitening(uint8_t cfg)
 {
@@ -979,7 +963,8 @@ void CC1100::set_data_whitening(uint8_t cfg)
   data = (data & 0xBF) | (((cfg) << 6) & 0x40);
   spi_write_register(PKTCTRL0, data);
 }
-//-------------------------------[end]------------------------------------------
+
+
 //------------[set manchester encoding ON=TRUE; OFF=FALSE]----------------------
 void CC1100::set_manchaster_encoding(uint8_t cfg)
 {
@@ -988,10 +973,8 @@ void CC1100::set_manchaster_encoding(uint8_t cfg)
   data = (data & 0xF7) | (((cfg) << 3) & 0x08);
   spi_write_register(PKTCTRL0, data);
 }
-//-------------------------------[end]------------------------------------------
 
 
-//--------------------------[rssi_convert]--------------------------------------
 int8_t CC1100::rssi_convert(uint8_t Rssi_hex)
 {
 	int8_t rssi_dbm;
@@ -1009,23 +992,20 @@ int8_t CC1100::rssi_convert(uint8_t Rssi_hex)
 	}
 	return rssi_dbm;
 }
-//-------------------------------[end]------------------------------------------
 
-//------------------[lqi convert]--------------------------------
+
 uint8_t CC1100::lqi_convert(uint8_t lqi)
 {
 	return (lqi & 0x7F);
 }
-//-------------------------------[end]------------------------------------------
 
-//----------------------------[check crc]---------------------------------------
+
 uint8_t CC1100::check_crc(uint8_t lqi)
 {
 	return (lqi & 0x80);
 }
-//-------------------------------[end]------------------------------------------
 
-//------------------[get temperature in Kelvin]---------------------------------
+
 uint16_t CC1100::get_tempK(void)
 {
 	const uint8_t num_samples = 8;
@@ -1066,7 +1046,7 @@ uint16_t CC1100::get_tempK(void)
 	//return (ptemp_Arr);
   return (uint16_t) temperatureK;
 }
-//-------------------------------[end]------------------------------------------
+
 
 //|==================== SPI Initialisation for CC1100 =========================|
 void CC1100::spi_begin(void)
