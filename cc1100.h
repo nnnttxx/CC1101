@@ -174,8 +174,8 @@ class CC1100
     uint8_t spi_read_status(uint8_t spi_instr);
 
     void reset(void);
-    void wakeup(void);
     void powerdown(void);
+    void wakeup(void);
     void sidle(void);
     void transmit(void);
     void receive(void);
@@ -211,8 +211,8 @@ class CC1100
     void set_mode(uint8_t mode);
     void set_output_power_level(int8_t dbm);
     void set_patable(uint8_t *patable_arr);
-    void set_data_whitening(uint8_t cfg);
-    void set_manchaster_encoding(uint8_t cfg);
+    void set_data_whitening(bool cfg);
+    void set_manchaster_encoding(bool cfg);
 
     void uart_puthex_nibble(const unsigned char b);
     void uart_puthex_byte(const unsigned char  b);
