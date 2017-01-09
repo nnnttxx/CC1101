@@ -25,7 +25,7 @@
 #define MISO_PIN 12
 #define MOSI_PIN 11
 #define SS_PIN   10
-#define GDO0     A0                // for temperature measurement      
+#define GDO0      2                // for temperature measurement      
 #define GDO2      3                // rx interrrupt
                                                          
 /*----------------------[CC1100 - misc]---------------------------------------*/
@@ -162,7 +162,8 @@ class CC1100
     uint8_t spi_putc(uint8_t data);
 
   public:
-    uint8_t begin(volatile uint8_t &My_addr);
+    uint8_t begin(uint8_t cc1100_mode_select, uint8_t cc1100_freq_select, 
+                      uint8_t cc1100_channel_select, uint8_t cc1100_pa_select, uint8_t My_addr);
     void end(void);
 
     void spi_write_strobe(uint8_t spi_instr);

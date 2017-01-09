@@ -332,7 +332,7 @@ void CC1100::reset(void)			      // reset defined in cc1100 datasheet
 void CC1100::powerdown(void)
 {
 	sidle();
-	spi_write_strobe(SPWD);           // CC!!00 Power Down
+	spi_write_strobe(SPWD);           // CC1100 Power Down
 }
 
 
@@ -346,9 +346,9 @@ void CC1100::wakeup(void)
 }
 
 
-uint8_t CC1100::begin(volatile uint8_t &My_addr)
+uint8_t CC1100::begin(uint8_t cc1100_mode_select, uint8_t cc1100_freq_select, 
+                      uint8_t cc1100_channel_select, uint8_t cc1100_pa_select, uint8_t My_addr)
 {
-	//uint8_t cc1100_freq_select, cc1100_mode_select, cc1100_channel_select;
 	uint8_t partnum, version;
 
 	pinMode(GDO0, INPUT);						       //setup GPIO ports
@@ -378,6 +378,24 @@ uint8_t CC1100::begin(volatile uint8_t &My_addr)
 
 			return FALSE;
 		}
+    
+  sidle();
+    
+  //set modulation mode
+	set_mode(cc1100_mode_select);
+
+	//set ISM band
+	set_ISM(cc1100_freq_select);
+
+	//set channel
+	set_channel(cc1100_channel_select);
+
+	//set output power amplifier
+	set_output_power_level(cc1100_pa_select);					//set PA to 0dBm as default
+
+	//set my receiver address
+	set_myaddr(My_addr);						    //My_Addr from EEPROM to global variable
+
 
 	#if CC1100_DEBUG == 1
 		Serial.print(F("Partnumber:"));
@@ -390,8 +408,8 @@ uint8_t CC1100::begin(volatile uint8_t &My_addr)
     
 		Serial.println(F("...done"));
 	#endif
-
-	//set CC1100 in receive mode
+  
+  //set CC1100 in receive mode
 	receive();
 
 	return TRUE;

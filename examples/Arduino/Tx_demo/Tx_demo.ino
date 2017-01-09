@@ -37,14 +37,17 @@ void setup()
   Serial.begin(38400);Serial.println();
   
   // init CC1101 RF-module and get My_address from EEPROM
-  cc1100.begin(My_addr);                   //inits RF module with main default settings
-  
+//  cc1100.begin(My_addr);                   //inits RF module with main default settings
+  cc1100.begin(CC1100_MODE_GFSK_1_2_kb, CC1100_FREQ_868MHZ, 0x01, 0, 0x01);
+
+/*  
   cc1100.sidle();                          //set to ILDE first
   cc1100.set_mode(CC1100_MODE_GFSK_1_2_kb); //set modulation array mode
   cc1100.set_ISM(CC1100_FREQ_868MHZ);      //set frequency
   cc1100.set_channel(0x01);                //set channel
   cc1100.set_output_power_level(0);        //set PA level in dbm
   cc1100.set_myaddr(0x01);                 //set my own address
+  */
   
   cc1100.spi_write_register(IOCFG2, 0x06); //set module in sync mode detection mode
   
