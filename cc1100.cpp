@@ -348,22 +348,19 @@ void CC1100::wakeup(void)
 uint8_t CC1100::begin(uint8_t cc1100_mode_select, uint8_t cc1100_freq_select,
                       uint8_t cc1100_channel_select, uint8_t cc1100_pa_select, uint8_t My_addr)
 {
-  uint8_t partnum, version;
-
   pinMode(GDO0, INPUT);						       //setup GPIO ports
   pinMode(GDO2, INPUT);
 
-#ifdef CC1100_DEBUG
+#if CC1100_DEBUG == 1
   Serial.println(F("Init CC1100..."));
 #endif
 
-  spi_begin();            // start naster SPI interface
+  spi_begin();            // start master SPI interface
   reset();								//CC1100 reset
   spi_write_strobe(SFTX); _delay_us(100); //flush the TX_fifo content
   spi_write_strobe(SFRX); _delay_us(100); //flush the RX_fifo content
 
-  partnum = spi_read_register(PARTNUM);
-  version = spi_read_register(VERSION);
+  uint8_t version = spi_read_register(VERSION);
 
   //checks if valid Chip ID is found. Usualy 0x03 or 0x14. if not -> abort
   if (version == 0x00 || version == 0xFF)
@@ -375,6 +372,20 @@ uint8_t CC1100::begin(uint8_t cc1100_mode_select, uint8_t cc1100_freq_select,
 #endif
 
     return FALSE;
+  }
+  else
+  {
+#if CC1100_DEBUG == 1
+    uint8_t partnum = spi_read_register(PARTNUM);
+    
+    Serial.print(F("Partnumber:"));
+    Serial.print(partnum, HEX);
+    Serial.println();
+  
+    Serial.print(F("Version:"));
+    Serial.print(version, HEX);
+    Serial.println();
+#endif
   }
 
   sidle();
@@ -394,16 +405,7 @@ uint8_t CC1100::begin(uint8_t cc1100_mode_select, uint8_t cc1100_freq_select,
   //set my receiver address
   set_myaddr(My_addr);						    //My_Addr from EEPROM to global variable
 
-
 #if CC1100_DEBUG == 1
-  Serial.print(F("Partnumber:"));
-  Serial.print(partnum, HEX);
-  Serial.println();
-
-  Serial.print(F("Version:"));
-  Serial.print(version, HEX);
-  Serial.println();
-
   Serial.println(F("...done"));
 #endif
 
@@ -685,9 +687,10 @@ uint8_t CC1100::get_payload(uint8_t rxbuffer[], uint8_t &pktlen, uint8_t &my_add
   {
     rssi_dbm = rssi_convert(rxbuffer[pktlen + 1]);		//converts receiver strength to dBm
     lqi = lqi_convert(rxbuffer[pktlen + 2]);
+
+#if CC1100_DEBUG == 1															    //debug output messages    
     uint8_t crc = check_crc(lqi);											//get rf quialtiy indicator
 
-#if CC1100_DEBUG == 1															//debug output messages
     Serial.println(F("----- RX Payload ------"));
 
     if (rxbuffer[1] == BROADCAST_ADDRESS)						//if my receiver address is BROADCAST_ADDRESS
@@ -711,10 +714,12 @@ uint8_t CC1100::get_payload(uint8_t rxbuffer[], uint8_t &pktlen, uint8_t &my_add
     my_addr = rxbuffer[1];														//set receiver address to my_addr
     sender = rxbuffer[2];															//set from_sender address
 
+    /* No need to send ACK here
     if (my_addr != BROADCAST_ADDRESS)									//send only ack if no BROADCAST_ADDRESS
     {
-      send_acknowledge(my_addr, sender);								//sending acknolage to sender!
+      send_acknowledge(my_addr, sender);								//sending acknowledge to sender!
     }
+    */
 
     return TRUE;
   }
@@ -726,32 +731,34 @@ uint8_t CC1100::check_acknowledge(uint8_t *rxbuffer, uint8_t pktlen, uint8_t sen
   //extern volatile uint8_t My_addr;
   //uint8_t tx_addr = rxbuffer[2];
 
-  if ((rxbuffer[1] == my_addr || rxbuffer[1] == BROADCAST_ADDRESS) && rxbuffer[2] == sender && rxbuffer[3] == 'A' && rxbuffer[4] == 'c' && rxbuffer[5] == 'k') 		 //acknolage received!
+  if ((rxbuffer[1] == my_addr || rxbuffer[1] == BROADCAST_ADDRESS) && rxbuffer[2] == sender && rxbuffer[3] == 'A' && rxbuffer[4] == 'c' && rxbuffer[5] == 'k') 		 //acknowledge received!
   {
-    if (rxbuffer[1] == BROADCAST_ADDRESS) {							//if receiver address BROADCAST_ADDRESS skip acknolage
+    if (rxbuffer[1] == BROADCAST_ADDRESS)       //if receiver address BROADCAST_ADDRESS skip acknowledge 
+    {							
 #if CC1100_DEBUG == 1
       Serial.println(F("BROADCAST ACK"));
 #endif
       return FALSE;
     }
+    
+#if CC1100_DEBUG == 1
     int8_t rssi_dbm = rssi_convert(rxbuffer[pktlen + 1]);
     uint8_t lqi = lqi_convert(rxbuffer[pktlen + 2]);
     uint8_t crc = check_crc(lqi);
-#if CC1100_DEBUG == 1
-    //Serial.println();
+
     Serial.print(F("ACK! "));
     Serial.print(F("RSSI:")); Serial.print(rssi_dbm, DEC); Serial.print(F(" "));
     Serial.print(F("LQI:")); Serial.print(lqi, DEC); Serial.print(F(" "));
     Serial.print(F("CRC:")); Serial.println(crc, HEX);
     Serial.println();
 #endif
+
     return TRUE;
   }
   return FALSE;
 }
-//-------------------------------[end]------------------------------------------
 
-//------------[check if Packet is received within defined time in ms]-----------
+
 uint8_t CC1100::wait_for_packet(uint8_t milliseconds)
 {
   for (uint8_t i = 0; i < milliseconds; i++)
@@ -965,18 +972,18 @@ void CC1100::set_patable(uint8_t *patable_arr)
 
 void CC1100::set_output_power_level(int8_t dBm)
 {
-  uint8_t pa = 0xC0;
+  uint8_t paTableIndex = 0x00;      // default: minimum output power
 
-  if      (dBm <= -30) pa = 0x00;
-  else if (dBm <= -20) pa = 0x01;
-  else if (dBm <= -15) pa = 0x02;
-  else if (dBm <= -10) pa = 0x03;
-  else if (dBm <= 0)   pa = 0x04;
-  else if (dBm <= 5)   pa = 0x05;
-  else if (dBm <= 7)   pa = 0x06;
-  else if (dBm <= 10)  pa = 0x07;
+  if      (dBm <= -30) paTableIndex = 0x00;
+  else if (dBm <= -20) paTableIndex = 0x01;
+  else if (dBm <= -15) paTableIndex = 0x02;
+  else if (dBm <= -10) paTableIndex = 0x03;
+  else if (dBm <= 0)   paTableIndex = 0x04;
+  else if (dBm <= 5)   paTableIndex = 0x05;
+  else if (dBm <= 7)   paTableIndex = 0x06;
+  else if (dBm <= 10)  paTableIndex = 0x07;
 
-  spi_write_register(FREND0, pa);
+  spi_write_register(FREND0, paTableIndex);
 }
 
 
@@ -1005,11 +1012,14 @@ int8_t CC1100::rssi_convert(uint8_t Rssi_hex)
 
   Rssi_dec = Rssi_hex;		//convert unsigned to signed
 
-  if (Rssi_dec >= 128) {
+  if (Rssi_dec >= 128) 
+  {
     rssi_dbm = ((Rssi_dec - 256) / 2) - RSSI_OFFSET_868MHZ;
   }
-  else {
-    if (Rssi_dec < 128) {
+  else 
+  {
+    if (Rssi_dec < 128) 
+    {
       rssi_dbm = ((Rssi_dec) / 2) - RSSI_OFFSET_868MHZ;
     }
   }
@@ -1034,18 +1044,19 @@ uint16_t CC1100::get_tempK(void)
   uint8_t IOCFG0_setting;
   uint16_t adc_result;
   uint32_t temperatureK;
-
-  sidle();									            //sets CC1100 into IDLE
+  
+  sidle();									                  //sets CC1100 into IDLE
   IOCFG0_setting = spi_read_register(IOCFG0); //read and save IOCFG0
-  spi_write_register(IOCFG0, 0x80);     //enable temp sensor
-  spi_write_register(PTEST, 0xBF);				//enable temp sensor
-  _delay_ms(50);												//wait a bit
-
-  for (uint8_t i = 0; i < 8; i++) //sampling analog temperature value
+  spi_write_register(IOCFG0, 0x80);           //enable temp sensor
+  spi_write_register(PTEST, 0xBF);			      //enable temp sensor
+  _delay_ms(5);												      //wait a bit
+  
+  for (uint8_t i = 0; i < 8; i++)     //sampling analog temperature value
   {
     adc_result += analogRead(GDO0);
     _delay_ms(1);
   }
+    
   adc_result = adc_result / 8;
 
   temperatureK = (adc_result * CC1100_TEMP_ADC_MV) - 651;   // 0.651V offset at -40degC
@@ -1058,8 +1069,6 @@ uint16_t CC1100::get_tempK(void)
 
   spi_write_register(IOCFG0, IOCFG0_setting);  // restore settings
   spi_write_register(PTEST, 0x7F);				//writes back 0x7F (default) (see datasheet pg. 91)
-
-  sidle();									            //sets CC1100 into IDLE
 
   return (uint16_t) temperatureK;
 }

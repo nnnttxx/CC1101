@@ -33,7 +33,7 @@ void setup()
   Serial.begin(9600); Serial.println();
 
   // init CC1101 RF-module and get My_address from EEPROM
-  if (cc1100.begin(CC1100_MODE_GFSK_38_4_kb, CC1100_FREQ_868MHZ, 1, 0, 3))
+  if (cc1100.begin(CC1100_MODE_GFSK_38_4_kb, CC1100_FREQ_868MHZ, 1, 0, 3))    // modulation mode, frequency, channel, PA level in dBm, own address
   {
     Serial.println(F("Init successful"));
   }
@@ -46,7 +46,6 @@ void setup()
   //  cc1100.set_myaddr(0x03);                 //set my own address
 
   cc1100.spi_write_register(IOCFG2, 0x06); //set module in sync mode detection mode
-  //cc1100.spi_write_register(IOCFG0, 0x05); //set module in sync mode detection mode
 
   cc1100.show_main_settings();             //shows setting debug messages to UART
   cc1100.show_register_settings();         //shows current CC1101 register values
@@ -71,6 +70,12 @@ void loop()
 
     rf_timecode_backup = millis();
     cc1101_packet_available = FALSE;
+
+  /*
+    // measure temperature
+    cc1100.get_tempK(); 
+    cc1100.receive();
+    */
   }
 
 }
@@ -80,16 +85,15 @@ void loop()
 void rf_available_int(void)
 {
   detachInterrupt(GDO2);
-  Serial.println(F("RX Interrupt"));
   sei();
-  uint32_t time_stamp = millis();                                   //generate time stamp
+  //uint32_t time_stamp = millis();                                   //generate time stamp
 
   if (cc1100.packet_available() == TRUE)
   {
     cc1100.get_payload(Rx_fifo, pktlen, rx_addr, sender, rssi_dbm, lqi); //stores the payload data to Rx_fifo
     cc1101_packet_available = TRUE;                                      //set flag that an package is in RX buffer
   }
-  Serial.print(F("RX duration: ")); Serial.print(millis() - time_stamp); Serial.println(F("ms")); Serial.println();
+  //Serial.print(F("RX duration: ")); Serial.print(millis() - time_stamp); Serial.println(F("ms")); Serial.println();
 
   attachInterrupt(GDO2, rf_available_int, HIGH);
 }

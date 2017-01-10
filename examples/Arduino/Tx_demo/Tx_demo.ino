@@ -15,7 +15,7 @@
 //--------------------------[Global Task variables]--------------------------
 uint32_t prev_millis_1s_timer = 0;
 
-const uint16_t INTERVAL_1S_TIMER = 1000;        // interval at which to blink (milliseconds)
+const uint16_t INTERVAL_1S_TIMER = 2500;        // interval at which to blink (milliseconds)
 
 //--------------------------[Global CC1100 variables]------------------------
 uint8_t Tx_fifo[FIFOBUFFER], Rx_fifo[FIFOBUFFER];
@@ -36,9 +36,11 @@ void setup()
   Serial.begin(9600); Serial.println();
 
   // init CC1101 RF-module and get My_address from EEPROM
-  //  cc1100.begin(My_addr);                   //inits RF module with main default settings
-  cc1100.begin(CC1100_MODE_GFSK_38_4_kb, CC1100_FREQ_868MHZ, 0x01, 0, 0x01);
-
+  if(cc1100.begin(CC1100_MODE_GFSK_38_4_kb, CC1100_FREQ_868MHZ, 1, 10, 1)) // modulation mode, frequency, channel, PA level in dBm, own address
+  {
+    Serial.println(F("Init successful"));
+  }
+  
   /*
     cc1100.sidle();                          //set to ILDE first
     cc1100.set_mode(CC1100_MODE_GFSK_1_2_kb); //set modulation array mode
@@ -47,9 +49,6 @@ void setup()
     cc1100.set_output_power_level(0);        //set PA level in dbm
     cc1100.set_myaddr(0x01);                 //set my own address
   */
-
-  cc1100.spi_write_register(IOCFG2, 0x04); // GDO2
-  cc1100.spi_write_register(IOCFG0, 0x05); // GDO0
 
   cc1100.show_main_settings();             //shows setting debug messages to UART
   cc1100.show_register_settings();         //shows current CC1101 register values
@@ -88,6 +87,8 @@ void loop()
 
     Serial.print(F("Tx time: ")); Serial.print(millis() - time_stamp); Serial.println(F("ms"));
     prev_millis_1s_timer = millis();
+
+    //cc1100.get_tempK();
   }
 
 }

@@ -25,8 +25,8 @@
 #define MISO_PIN 12
 #define MOSI_PIN 11
 #define SS_PIN   10
-#define GDO0      2                // for temperature measurement      
-#define GDO2      3                // rx interrrupt
+#define GDO0     A0                // for temperature measurement      
+#define GDO2      2                // rx interrrupt
                                                          
 /*----------------------[CC1100 - misc]---------------------------------------*/
 #define CFG_REGISTER        47  
