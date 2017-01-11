@@ -484,7 +484,6 @@ void CC1100::sidle(void)
   while (marcstate != 0x01)						    	//0x01 = IDLE
   {
     marcstate = (spi_read_register(MARCSTATE) & 0x1F);		//read out state of cc1100 to be sure in RX
-    //		Serial.println(marcstate, HEX);
   }
 }
 
@@ -499,7 +498,6 @@ void CC1100::transmit(void)
   while (marcstate != 0x01)						      //0x01 = ILDE after sending data
   {
     marcstate = (spi_read_register(MARCSTATE) & 0x1F);		 //read out state of cc1100 to be sure in IDLE and TX is finished
-    //    Serial.println(marcstate, HEX);
     _delay_us(100);                          //must be in for ever reason
   }
 
@@ -518,12 +516,11 @@ void CC1100::receive(void)
   while (marcstate != 0x0D)                  //0x0D = RX
   {
     marcstate = (spi_read_register(MARCSTATE) & 0x1F);		//read out state of cc1100 to be sure in RX
-    //    Serial.println(marcstate, HEX);
   }
 }
 
 
-void CC1100::tx_payload_burst(uint8_t my_addr, uint8_t rx_addr,
+void CC1100::write_tx_fifo(uint8_t my_addr, uint8_t rx_addr,
                               uint8_t *txbuffer, uint8_t length)
 {
   txbuffer[0] = length - 1;
@@ -547,11 +544,11 @@ void CC1100::tx_payload_burst(uint8_t my_addr, uint8_t rx_addr,
 }
 
 
-void CC1100::rx_payload_burst(uint8_t rxbuffer[], uint8_t &pktlen)
+void CC1100::read_rx_fifo(uint8_t rxbuffer[], uint8_t &pktlen)
 {
   uint8_t bytes_in_RXFIFO = spi_read_register(RXBYTES); //reads the number of bytes in RXFIFO
 
-  if (bytes_in_RXFIFO & 0x7F && !(bytes_in_RXFIFO & 0x80))
+  if ((bytes_in_RXFIFO & 0x7F) && !(bytes_in_RXFIFO & 0x80))
   {
     pktlen = spi_read_register(RXFIFO_SINGLE_BYTE);		//received pktlen +1 for complete TX buffer
     rxbuffer[0] = pktlen;
@@ -578,15 +575,17 @@ uint8_t CC1100::send_packet(uint8_t my_addr, uint8_t rx_addr, uint8_t *txbuffer,
   uint8_t pktlen_ack;																			//default package len for ACK
   uint8_t rxbuffer[FIFOBUFFER];
   uint8_t tx_retries_count = 0;
-  uint16_t ackWaitCounter = 0;
 
   do										                                  //sent package out with retries
   {
-    tx_payload_burst(my_addr, rx_addr, txbuffer, pktlen);	//loads the data in cc1100 buffer
+    uint16_t ackWaitCounter = 0;																	 //resets the ACK_Timeout
+    
+    write_tx_fifo(my_addr, rx_addr, txbuffer, pktlen);	  //loads the data in cc1100 buffer
     transmit();												                    //sents data over air
-    receive();												                    //receive mode
-
-    if (rx_addr == BROADCAST_ADDRESS || tx_retries == 0) { //no wait acknowge if sent to broadcast address or tx_retries = 0
+    receive();		
+  
+    if (rx_addr == BROADCAST_ADDRESS)                      //no wait for acknowglede if sent to broadcast address  
+    { 
       return TRUE;																				//successful sent to BROADCAST_ADDRESS
     }
 
@@ -595,19 +594,21 @@ uint8_t CC1100::send_packet(uint8_t my_addr, uint8_t rx_addr, uint8_t *txbuffer,
       if (packet_available() == TRUE)					      			//if RF package received check package acknowge
       {
         uint8_t from_sender = rx_addr;                  	//the original message sender address
-        rx_fifo_erase(rxbuffer);
-        rx_payload_burst(rxbuffer, pktlen_ack);						//reads package in buffer
+        clear_rx_buffer(rxbuffer);
+        read_rx_fifo(rxbuffer, pktlen_ack);						//reads package in buffer
         check_acknowledge(rxbuffer, pktlen_ack, from_sender, my_addr);
+        
         return TRUE;																			//package successfully sent
       }
-      else
-      {
-        ackWaitCounter++;                   							//increment ACK wait counter
-        _delay_ms(1);																			//delay to give receiver time
-      }
+      
+      ackWaitCounter++;                   							//increment ACK wait counter
+      _delay_ms(1);																			//delay to give receiver time
     }
+    
+#if CC1100_DEBUG == 1																 //debug output messages
+    Serial.print("ACK timeout !");
+#endif
 
-    ackWaitCounter = 0;																	 //resets the ACK_Timeout
     tx_retries_count++;																	 //increase tx retry counter
 
 #if CC1100_DEBUG == 1																 //debug output messages
@@ -621,51 +622,11 @@ uint8_t CC1100::send_packet(uint8_t my_addr, uint8_t rx_addr, uint8_t *txbuffer,
 }
 
 
-void CC1100::send_acknowledge(uint8_t my_addr, uint8_t tx_addr)
-{
-  uint8_t pktlen = 0x06;																//complete Pktlen for ACK packet
-  uint8_t tx_buffer[0x06];															//tx buffer array init
-
-  tx_buffer[3] = 'A';	tx_buffer[4] = 'c';	tx_buffer[5] = 'k';	//fill buffer with ACK Payload
-
-  tx_payload_burst(my_addr, tx_addr, tx_buffer, pktlen);//load payload to CC1100
-  transmit();																						//sent package over the air
-  receive();																						//set CC1100 in receive mode
-
-#if CC1100_DEBUG == 1																	//debut output
-  //Serial.println();
-  Serial.println(F("Ack sent!"));
-#endif
-}
-
-
-uint8_t CC1100::packet_available()
-{
-  if (digitalRead(GDO2) == TRUE)														//if RF package received
-  {
-    //Serial.println("GDO2!");
-    if (spi_read_register(IOCFG2) == 0x06)								//if sync word detect mode is used
-    {
-      while (digitalRead(GDO2) == TRUE) {               //for sync word receive
-        //Serial.println(F("!"));
-      };
-    }
-
-#if CC1100_DEBUG == 1
-    //Serial.println("Pkt->:");
-#endif
-
-    return TRUE;
-  }
-  return FALSE;
-}
-
-
 uint8_t CC1100::get_payload(uint8_t rxbuffer[], uint8_t &pktlen, uint8_t &my_addr,
                             uint8_t &sender, int8_t &rssi_dbm, uint8_t &lqi)
 {
-  rx_fifo_erase(rxbuffer);															//delete rx_fifo bufffer
-  rx_payload_burst(rxbuffer, pktlen);							     	//read package in buffer
+  clear_rx_buffer(rxbuffer);														//delete rx_fifo bufffer
+  read_rx_fifo(rxbuffer, pktlen);							     	    //read package in buffer
 
   if (pktlen == 0x00)																		//packet len not plausible?
   {
@@ -689,10 +650,9 @@ uint8_t CC1100::get_payload(uint8_t rxbuffer[], uint8_t &pktlen, uint8_t &my_add
     lqi = lqi_convert(rxbuffer[pktlen + 2]);
 
 #if CC1100_DEBUG == 1															    //debug output messages    
-    uint8_t crc = check_crc(lqi);											//get rf quialtiy indicator
+    uint8_t crc = check_crc(rxbuffer[pktlen + 2]);		//get rf quialtiy indicator
 
     Serial.println(F("----- RX Payload ------"));
-
     if (rxbuffer[1] == BROADCAST_ADDRESS)						//if my receiver address is BROADCAST_ADDRESS
     {
       Serial.println(F("BROADCAST message"));
@@ -711,32 +671,49 @@ uint8_t CC1100::get_payload(uint8_t rxbuffer[], uint8_t &pktlen, uint8_t &my_add
     Serial.println(F("-----------------------"));
 #endif
 
-    my_addr = rxbuffer[1];														//set receiver address to my_addr
-    sender = rxbuffer[2];															//set from_sender address
-
-    /* No need to send ACK here
     if (my_addr != BROADCAST_ADDRESS)									//send only ack if no BROADCAST_ADDRESS
     {
       send_acknowledge(my_addr, sender);								//sending acknowledge to sender!
     }
-    */
 
     return TRUE;
   }
 }
 
 
+void CC1100::send_acknowledge(uint8_t my_addr, uint8_t tx_addr)
+{
+  uint8_t pktlen = 6;																//complete Pktlen for ACK packet
+  uint8_t tx_buffer[6];															//tx buffer array init
+
+  tx_buffer[3] = 'A';	tx_buffer[4] = 'c';	tx_buffer[5] = 'k';	//fill buffer with ACK Payload
+
+  write_tx_fifo(my_addr, tx_addr, tx_buffer, pktlen);   //load payload to CC1100
+  transmit();																						//sent package over the air
+  receive();																						//set CC1100 in receive mode
+  
+#if CC1100_DEBUG == 1																	//debut output
+  if(tx_addr == BROADCAST_ADDRESS)
+  {
+    Serial.println(F("BROADCAST ACK sent!"));
+  }
+  else
+  {
+    Serial.println(F("ACK sent!"));
+  }
+#endif
+}
+
+
 uint8_t CC1100::check_acknowledge(uint8_t *rxbuffer, uint8_t pktlen, uint8_t sender, uint8_t my_addr)
 {
-  //extern volatile uint8_t My_addr;
-  //uint8_t tx_addr = rxbuffer[2];
 
   if ((rxbuffer[1] == my_addr || rxbuffer[1] == BROADCAST_ADDRESS) && rxbuffer[2] == sender && rxbuffer[3] == 'A' && rxbuffer[4] == 'c' && rxbuffer[5] == 'k') 		 //acknowledge received!
   {
     if (rxbuffer[1] == BROADCAST_ADDRESS)       //if receiver address BROADCAST_ADDRESS skip acknowledge 
     {							
 #if CC1100_DEBUG == 1
-      Serial.println(F("BROADCAST ACK"));
+      Serial.println(F("BROADCAST ACK recived"));
 #endif
       return FALSE;
     }
@@ -744,9 +721,9 @@ uint8_t CC1100::check_acknowledge(uint8_t *rxbuffer, uint8_t pktlen, uint8_t sen
 #if CC1100_DEBUG == 1
     int8_t rssi_dbm = rssi_convert(rxbuffer[pktlen + 1]);
     uint8_t lqi = lqi_convert(rxbuffer[pktlen + 2]);
-    uint8_t crc = check_crc(lqi);
+    uint8_t crc = check_crc(rxbuffer[pktlen + 2]);
 
-    Serial.print(F("ACK! "));
+    Serial.println(F("ACK received!"));
     Serial.print(F("RSSI:")); Serial.print(rssi_dbm, DEC); Serial.print(F(" "));
     Serial.print(F("LQI:")); Serial.print(lqi, DEC); Serial.print(F(" "));
     Serial.print(F("CRC:")); Serial.println(crc, HEX);
@@ -755,6 +732,7 @@ uint8_t CC1100::check_acknowledge(uint8_t *rxbuffer, uint8_t pktlen, uint8_t sen
 
     return TRUE;
   }
+  
   return FALSE;
 }
 
@@ -781,16 +759,35 @@ uint8_t CC1100::wait_for_packet(uint8_t milliseconds)
 
   Serial.println(F("no packet received!"));
   return FALSE;
-}
+}   
 
 
-void CC1100::tx_fifo_erase(uint8_t *txbuffer)
+uint8_t CC1100::packet_available()
+{
+  if (digitalRead(GDO2) == TRUE)														//if RF package received
+  {
+    if (spi_read_register(IOCFG2) == 0x06)								//if sync word detect mode is used
+    {
+      while (digitalRead(GDO2) == TRUE)                   //for sync word receive 
+      {               
+        //Serial.println(F("!"));
+      };
+    }
+
+    return TRUE;
+  }
+  
+  return FALSE;
+} 
+
+
+void CC1100::clear_tx_buffer(uint8_t *txbuffer)
 {
   memset(txbuffer, 0, sizeof(FIFOBUFFER));				  //erased the TX_fifo array content to "0"
 }
 
 
-void CC1100::rx_fifo_erase(uint8_t *rxbuffer)
+void CC1100::clear_rx_buffer(uint8_t *rxbuffer)
 {
   memset(rxbuffer, 0, sizeof(FIFOBUFFER));				  //erased the RX_fifo array content to "0"
 }
@@ -803,10 +800,22 @@ void CC1100::set_myaddr(uint8_t addr)
 }
 
 
+uint8_t CC1100::get_myaddr(void)
+{
+  return spi_read_register(ADDR);
+}
+
+
 void CC1100::set_channel(uint8_t channel)
 {
   spi_write_register(CHANNR, channel);					//stores the new channel # in the CC1100
   eeprom_write_byte((uint8_t*)EEPROM_ADDRESS_CC1100_CHANNEL, channel);		//writes byte to eeprom
+}
+
+
+uint8_t CC1100::get_channel(void)
+{
+  return spi_read_register(CHANNR);
 }
 
 
@@ -948,20 +957,10 @@ void CC1100::set_ISM(uint8_t ism_freq)
   spi_write_register(FREQ1, freq1);
   spi_write_register(FREQ0, freq0);
 
-  spi_write_burst(PATABLE_BURST, Patable, PA_TABLESIZE) ;								//writes output power settings to cc1100
+  set_patable(Patable);
+//  spi_write_burst(PATABLE_BURST, Patable, PA_TABLESIZE) ;								//writes output power settings to cc1100
   eeprom_write_byte((uint8_t*)EEPROM_ADDRESS_CC1100_FREQUENCY, ism_freq);	//selects the cc1100 frequency
 }
-
-/*
-  void CC1100::set_freq(uint32_t freq)
-  {
-    uint32_t num;
-
-    num = freq * (0x10000 / 1000000.0) / 26; //26MHz oscillator
-    FREQ2 = num >> 16;
-    FREQ1 = (num>>8) & 0xff;
-    FREQ0 = num & 0xff;
-  }*/
 
 
 void CC1100::set_patable(uint8_t *patable_arr)
@@ -1010,7 +1009,7 @@ int8_t CC1100::rssi_convert(uint8_t Rssi_hex)
   int8_t rssi_dbm;
   int16_t Rssi_dec;
 
-  Rssi_dec = Rssi_hex;		//convert unsigned to signed
+  Rssi_dec = (int16_t) Rssi_hex;		//convert unsigned char to signed int
 
   if (Rssi_dec >= 128) 
   {
@@ -1023,6 +1022,7 @@ int8_t CC1100::rssi_convert(uint8_t Rssi_hex)
       rssi_dbm = ((Rssi_dec) / 2) - RSSI_OFFSET_868MHZ;
     }
   }
+  
   return rssi_dbm;
 }
 
@@ -1035,7 +1035,7 @@ uint8_t CC1100::lqi_convert(uint8_t lqi)
 
 uint8_t CC1100::check_crc(uint8_t lqi)
 {
-  return (lqi & 0x80);
+  return (lqi & 0x80 ? 1:0);
 }
 
 
@@ -1142,21 +1142,6 @@ void CC1100::spi_write_strobe(uint8_t spi_instr)
   spi_putc(spi_instr);
   digitalWrite(SS_PIN, HIGH);         // CS high
 }
-
-
-//|======================= Status byte lesen ==================================|
-/*
-  uint8_t CC1100::spi_read_status(uint8_t spi_instr)
-  {
-	digitalWrite(SS_PIN, LOW);         // CS low
-	while(digitalRead(MOSI_PIN) == 0); // Wait until MOSI_PIN becomes LOW
-	spi_putc(spi_instr | Read_burst);
-	spi_instr = spi_putc(0xff);
-	digitalWrite(SS_PIN, HIGH);        // CS high
-
-	return spi_instr;
-  }
-*/
 
 
 uint8_t CC1100::spi_read_register(uint8_t spi_instr)

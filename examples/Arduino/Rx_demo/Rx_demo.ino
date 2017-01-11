@@ -30,10 +30,10 @@ CC1100 cc1100;
 void setup()
 {
   // init serial Port for debugging
-  Serial.begin(9600); Serial.println();
+  Serial.begin(115200); Serial.println();
 
   // init CC1101 RF-module and get My_address from EEPROM
-  if (cc1100.begin(CC1100_MODE_GFSK_38_4_kb, CC1100_FREQ_868MHZ, 1, 0, 3))    // modulation mode, frequency, channel, PA level in dBm, own address
+  if (cc1100.begin(CC1100_MODE_GFSK_38_4_kb, CC1100_FREQ_868MHZ, 1, 10, 3))    // modulation mode, frequency, channel, PA level in dBm, own address
   {
     Serial.println(F("Init successful"));
   }
@@ -45,7 +45,8 @@ void setup()
   //  cc1100.set_output_power_level(0);        //set PA level in dbm
   //  cc1100.set_myaddr(0x03);                 //set my own address
 
-  cc1100.spi_write_register(IOCFG2, 0x06); //set module in sync mode detection mode
+  cc1100.spi_write_register(IOCFG2, 0x07);  //Asserts when a packet has been received with CRC OK. 
+                                            //De-asserts when the first byte is read from the RX FIFO. 
 
   cc1100.show_main_settings();             //shows setting debug messages to UART
   cc1100.show_register_settings();         //shows current CC1101 register values

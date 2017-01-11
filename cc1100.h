@@ -168,10 +168,9 @@ class CC1100
 
     void spi_write_strobe(uint8_t spi_instr);
     void spi_write_register(uint8_t spi_instr, uint8_t value);
+    uint8_t spi_read_register(uint8_t spi_instr);    
     void spi_write_burst(uint8_t spi_instr, uint8_t *pArr, uint8_t length);
-    void spi_read_burst(uint8_t spi_instr, uint8_t *pArr, uint8_t length);
-    uint8_t spi_read_register(uint8_t spi_instr);
-    uint8_t spi_read_status(uint8_t spi_instr);
+    void spi_read_burst(uint8_t spi_instr, uint8_t *pArr, uint8_t length);    
 
     void reset(void);
     void powerdown(void);
@@ -183,17 +182,17 @@ class CC1100
     void show_register_settings(void);
     void show_main_settings(void);
 
-    uint8_t packet_available();
+    uint8_t packet_available(void);
     uint8_t wait_for_packet(uint8_t milliseconds);
 
     uint8_t get_payload(uint8_t rxbuffer[], uint8_t &pktlen_rx,uint8_t &my_addr,
                                 uint8_t &sender, int8_t &rssi_dbm, uint8_t &lqi);
 
-    void tx_payload_burst(uint8_t my_addr, uint8_t rx_addr, uint8_t *txbuffer, uint8_t length);
-    void rx_payload_burst(uint8_t rxbuffer[], uint8_t &pktlen);
+    void write_tx_fifo(uint8_t my_addr, uint8_t rx_addr, uint8_t *txbuffer, uint8_t length);
+    void read_rx_fifo(uint8_t rxbuffer[], uint8_t &pktlen);
 
-    void rx_fifo_erase(uint8_t *rxbuffer);
-    void tx_fifo_erase(uint8_t *txbuffer);
+    void clear_rx_buffer(uint8_t *rxbuffer);
+    void clear_tx_buffer(uint8_t *txbuffer);
 
     uint8_t send_packet(uint8_t my_addr, uint8_t rx_addr, uint8_t *txbuffer, uint8_t pktlen, uint8_t tx_retries);
     void send_acknowledge(uint8_t my_addr, uint8_t tx_addr);
@@ -213,11 +212,9 @@ class CC1100
     void set_patable(uint8_t *patable_arr);
     void set_data_whitening(bool cfg);
     void set_manchaster_encoding(bool cfg);
-
-    void uart_puthex_nibble(const unsigned char b);
-    void uart_puthex_byte(const unsigned char  b);
-    void uart_puti(const int val);
-
+    
+    uint8_t get_myaddr(void);
+    uint8_t get_channel(void);
 };
 //extern CC1100 cc1100;
 
