@@ -157,6 +157,14 @@
 class CC1100
 {
   private:
+    uint8_t _modulation;
+    uint8_t _ISM;
+    uint8_t _channel;
+    uint8_t _patable[PA_TABLESIZE];
+    uint8_t _paTableIndex;
+    uint8_t _output_power_leveldBm;
+    uint8_t _my_addr;
+  
     void spi_begin(void);
     void spi_end(void);
     uint8_t spi_putc(uint8_t data);
@@ -207,14 +215,20 @@ class CC1100
     void set_myaddr(uint8_t addr);
     void set_channel(uint8_t channel);
     void set_ISM(uint8_t ism_freq);
-    void set_mode(uint8_t mode);
+    void set_modulation(uint8_t mode);
     void set_output_power_level(int8_t dbm);
-    void set_patable(uint8_t *patable_arr);
+    void write_patable(uint8_t *patable_arr);
     void set_data_whitening(bool cfg);
     void set_manchaster_encoding(bool cfg);
     
     uint8_t get_myaddr(void);
     uint8_t get_channel(void);
+    uint8_t get_output_power_level(void);
+    uint8_t get_patable_index(void);
+    uint8_t get_modulation(void);
+    uint8_t get_ISM(void);
+    
+    
 };
 //extern CC1100 cc1100;
 

@@ -34,7 +34,7 @@ const uint8_t cc1100_GFSK_1_2_kb[] PROGMEM = {
           0x15,  // DEVIATN       Modem Deviation Setting
           0x07,  // MCSM2         Main Radio Control State Machine Configuration
           0x0C,  // MCSM1         Main Radio Control State Machine Configuration
-          0x19,  // MCSM0         Main Radio Control State Machine Configuration
+          0x18,  // MCSM0         Main Radio Control State Machine Configuration
           0x16,  // FOCCFG        Frequency Offset Compensation Configuration
           0x6C,  // BSCFG         Bit Synchronization Configuration
           0x03,  // AGCCTRL2      AGC Control
@@ -84,7 +84,7 @@ const uint8_t cc1100_GFSK_38_4_kb[] PROGMEM = {
           0x34,  // DEVIATN       Modem Deviation Setting
           0x07,  // MCSM2         Main Radio Control State Machine Configuration
           0x0C,  // MCSM1         Main Radio Control State Machine Configuration
-          0x19,  // MCSM0         Main Radio Control State Machine Configuration
+          0x18,  // MCSM0         Main Radio Control State Machine Configuration
           0x16,  // FOCCFG        Frequency Offset Compensation Configuration
           0x6C,  // BSCFG         Bit Synchronization Configuration
           0x43,  // AGCCTRL2      AGC Control
@@ -342,6 +342,10 @@ void CC1100::wakeup(void)
   digitalWrite(SS_PIN, HIGH);
   _delay_us(10);
   sidle();     // go to IDLE Mode
+  
+  write_patable(_patable);    // Note:  All  content  of  the  PATABLE  except 
+                              // for  the  first  byte  (index  0)  is  lost  when 
+                              // entering the SLEEP state. 
 }
 
 
@@ -391,7 +395,7 @@ uint8_t CC1100::begin(uint8_t cc1100_mode_select, uint8_t cc1100_freq_select,
   sidle();
 
   //set modulation mode
-  set_mode(cc1100_mode_select);
+  set_modulation(cc1100_mode_select);
 
   //set ISM band
   set_ISM(cc1100_freq_select);
@@ -425,21 +429,20 @@ void CC1100::end(void)
 void CC1100::show_main_settings(void)
 {
 #if CC1100_DEBUG == 1
-  Serial.print(F("EE Modulation:"));
-  Serial.println(eeprom_read_byte((const uint8_t*)EEPROM_ADDRESS_CC1100_MODE));
-
-  Serial.print(F("EE Frequency:"));
-  Serial.println(eeprom_read_byte((const uint8_t*)EEPROM_ADDRESS_CC1100_FREQUENCY));
-
-  Serial.print(F("EE Channel:"));
-  Serial.println(eeprom_read_byte((const uint8_t*)EEPROM_ADDRESS_CC1100_CHANNEL));
+  Serial.print(F("CC1101 Modulation:"));
+  Serial.println(get_modulation());
+  
+  Serial.print(F("CC1101 Frequency:"));
+  Serial.println(get_ISM());
+  
   Serial.print(F("CC1101 Channel:"));
-  Serial.println(spi_read_register(CHANNR));
+  Serial.println(get_channel());
+  
+  Serial.print(F("CC1101 Output Power Level:"));
+  Serial.println(get_output_power_level());
 
-  Serial.print(F("EE My_Addr:"));
-  Serial.println(eeprom_read_byte((const uint8_t*)EEPROM_ADDRESS_CC1100_MY_ADDR));
-  Serial.print(F("CC1101 My_Addr:"));
-  Serial.println(spi_read_register(ADDR));
+  Serial.print(F("CC1101 Own Address:"));
+  Serial.println(get_myaddr());
 #endif
 }
 
@@ -469,7 +472,8 @@ void CC1100::show_register_settings(void)
   {
     Serial.print(Patable_verify[i], HEX); Serial.print(F(" "));
   }
-  Serial.println();
+  
+  Serial.println();Serial.println();
 #endif
 }
 
@@ -796,95 +800,104 @@ void CC1100::clear_rx_buffer(uint8_t *rxbuffer)
 void CC1100::set_myaddr(uint8_t addr)
 {
   spi_write_register(ADDR, addr);									//stores MyAddr in the CC1100
-  eeprom_write_byte((uint8_t*)EEPROM_ADDRESS_CC1100_MY_ADDR, addr);				//writes byte to eeprom
+  _my_addr = spi_read_register(ADDR); 
+//  eeprom_write_byte((uint8_t*)EEPROM_ADDRESS_CC1100_MY_ADDR, addr);				//writes byte to eeprom
 }
 
 
 uint8_t CC1100::get_myaddr(void)
 {
-  return spi_read_register(ADDR);
+  return _my_addr;
 }
 
 
 void CC1100::set_channel(uint8_t channel)
 {
   spi_write_register(CHANNR, channel);					//stores the new channel # in the CC1100
-  eeprom_write_byte((uint8_t*)EEPROM_ADDRESS_CC1100_CHANNEL, channel);		//writes byte to eeprom
+  _channel = spi_read_register(CHANNR); 
+  //eeprom_write_byte((uint8_t*)EEPROM_ADDRESS_CC1100_CHANNEL, channel);		//writes byte to eeprom
 }
 
 
 uint8_t CC1100::get_channel(void)
 {
-  return spi_read_register(CHANNR);
+  return _channel;
 }
 
 
-void CC1100::set_mode(uint8_t mode)
+void CC1100::set_modulation(uint8_t modulation)
 {
   uint8_t Cfg_reg[CFG_REGISTER], i;
+  
+  _modulation = modulation;
 
-  switch (mode)
+  switch (modulation)
   {
     case CC1100_MODE_GFSK_1_2_kb:
-      //eeprom_read_block(Cfg_reg,cc1100_GFSK_1_2_kb,CFG_REGISTER);			  //sets up settings for GFSK 1,2 kbit mode/speed
       for (i = 0; i < CFG_REGISTER; i++)
       {
         Cfg_reg[i] = pgm_read_byte_near(cc1100_GFSK_1_2_kb + i);
       }
       break;
+      
     case CC1100_MODE_GFSK_38_4_kb:
-      //eeprom_read_block(Cfg_reg,cc1100_GFSK_38_4_kb,CFG_REGISTER);			//sets up settings for GFSK 38,4 kbit mode/speed
       for (i = 0; i < CFG_REGISTER; i++)
       {
         Cfg_reg[i] = pgm_read_byte_near(cc1100_GFSK_38_4_kb + i);
       }
       break;
+      
     case CC1100_MODE_GFSK_100_kb:
-      //eeprom_read_block(Cfg_reg,cc1100_GFSK_100_kb,CFG_REGISTER);				//sets up settings for GFSK 100 kbit mode/speed
       for (i = 0; i < CFG_REGISTER; i++)
       {
         Cfg_reg[i] = pgm_read_byte_near(cc1100_GFSK_100_kb + i);
       }
       break;
+      
     case CC1100_MODE_MSK_250_kb:
-      //eeprom_read_block(Cfg_reg,cc1100_MSK_250_kb,CFG_REGISTER);				//sets up settings for GFSK 38,4 kbit mode/speed
       for (i = 0; i < CFG_REGISTER; i++)
       {
         Cfg_reg[i] = pgm_read_byte_near(cc1100_MSK_250_kb + i);
       }
       break;
+      
     case CC1100_MODE_MSK_500_kb:
-      //eeprom_read_block(Cfg_reg,cc1100_MSK_500_kb,CFG_REGISTER);				//sets up settings for GFSK 38,4 kbit mode/speed
       for (i = 0; i < CFG_REGISTER; i++)
       {
         Cfg_reg[i] = pgm_read_byte_near(cc1100_MSK_500_kb + i);
       }
       break;
+      
     case CC1100_MODE_OOK_4_8_kb:
-      //eeprom_read_block(Cfg_reg,cc1100_OOK_4_8_kb,CFG_REGISTER);				//sets up settings for GFSK 38,4 kbit mode/speed
       for (i = 0; i < CFG_REGISTER; i++)
       {
         Cfg_reg[i] = pgm_read_byte_near(cc1100_OOK_4_8_kb + i);
       }
       break;
+      
     default:
-      //eeprom_read_block(Cfg_reg,cc1100_GFSK_38_4_kb,CFG_REGISTER);			//sets up settings for GFSK 38,4 kbit mode/speed
+      modulation = 0x02;                  // CC1100_MODE_GFSK_38_4_kb
       for (i = 0; i < CFG_REGISTER; i++)
       {
         Cfg_reg[i] = pgm_read_byte_near(cc1100_GFSK_38_4_kb + i);
       }
-      mode = 0x02;
       break;
   }
 
   spi_write_burst(WRITE_BURST, Cfg_reg, CFG_REGISTER);											  //writes all 47 config register
-  eeprom_write_byte((uint8_t*)EEPROM_ADDRESS_CC1100_MODE, mode);							//sets the cc1100 frequency
+}
+
+uint8_t CC1100::get_modulation(void)
+{
+  return _modulation;
 }
 
 
 void CC1100::set_ISM(uint8_t ism_freq)
 {
-  uint8_t freq2, freq1, freq0, Patable[PA_TABLESIZE], i;
+  uint8_t freq2, freq1, freq0, i;
+  
+  _ISM = ism_freq;
 
   switch (ism_freq) 												//loads the RF freq which is defined in cc1100_freq_select
   {
@@ -895,7 +908,7 @@ void CC1100::set_ISM(uint8_t ism_freq)
       //eeprom_read_block(Patable,patable_power_315,8);
       for (i = 0; i < PA_TABLESIZE; i++)
       {
-        Patable[i] = pgm_read_byte_near(patable_power_315 + i);
+        _patable[i] = pgm_read_byte_near(patable_power_315 + i);
       }
       break;
     case CC1100_FREQ_434MHZ:															//433.92MHz
@@ -905,7 +918,7 @@ void CC1100::set_ISM(uint8_t ism_freq)
       //eeprom_read_block(Patable,patable_power_433,8);
       for (i = 0; i < PA_TABLESIZE; i++)
       {
-        Patable[i] = pgm_read_byte_near(patable_power_433 + i);
+        _patable[i] = pgm_read_byte_near(patable_power_433 + i);
       }
       break;
     case CC1100_FREQ_868MHZ:															//868.3MHz
@@ -915,7 +928,7 @@ void CC1100::set_ISM(uint8_t ism_freq)
       //eeprom_read_block(Patable,patable_power_868,8);
       for (i = 0; i < PA_TABLESIZE; i++)
       {
-        Patable[i] = pgm_read_byte_near(patable_power_868 + i);
+        _patable[i] = pgm_read_byte_near(patable_power_868 + i);
       }
       break;
     case CC1100_FREQ_915MHZ:															//915MHz
@@ -925,7 +938,7 @@ void CC1100::set_ISM(uint8_t ism_freq)
       //eeprom_read_block(Patable,patable_power_915,8);
       for (i = 0; i < PA_TABLESIZE; i++)
       {
-        Patable[i] = pgm_read_byte_near(patable_power_915 + i);
+        _patable[i] = pgm_read_byte_near(patable_power_915 + i);
       }
       break;
     /*
@@ -947,7 +960,7 @@ void CC1100::set_ISM(uint8_t ism_freq)
       //eeprom_read_block(Patable,patable_power_868,8);		//sets up output power ramp register
       for (i = 0; i < PA_TABLESIZE; i++)
       {
-        Patable[i] = pgm_read_byte_near(patable_power_868 + i);
+        _patable[i] = pgm_read_byte_near(patable_power_868 + i);
       }
       ism_freq = 0x03;
       break;
@@ -957,13 +970,16 @@ void CC1100::set_ISM(uint8_t ism_freq)
   spi_write_register(FREQ1, freq1);
   spi_write_register(FREQ0, freq0);
 
-  set_patable(Patable);
-//  spi_write_burst(PATABLE_BURST, Patable, PA_TABLESIZE) ;								//writes output power settings to cc1100
-  eeprom_write_byte((uint8_t*)EEPROM_ADDRESS_CC1100_FREQUENCY, ism_freq);	//selects the cc1100 frequency
+  write_patable(_patable);
+}
+
+uint8_t CC1100::get_ISM(void)
+{
+  return _ISM;
 }
 
 
-void CC1100::set_patable(uint8_t *patable_arr)
+void CC1100::write_patable(uint8_t *patable_arr)
 {
   spi_write_burst(PATABLE_BURST, patable_arr, PA_TABLESIZE);								//writes output power settings to cc1100	"104us"
 }
@@ -972,6 +988,8 @@ void CC1100::set_patable(uint8_t *patable_arr)
 void CC1100::set_output_power_level(int8_t dBm)
 {
   uint8_t paTableIndex = 0x00;      // default: minimum output power
+  
+  _output_power_leveldBm = dBm;
 
   if      (dBm <= -30) paTableIndex = 0x00;
   else if (dBm <= -20) paTableIndex = 0x01;
@@ -983,6 +1001,18 @@ void CC1100::set_output_power_level(int8_t dBm)
   else if (dBm <= 10)  paTableIndex = 0x07;
 
   spi_write_register(FREND0, paTableIndex);
+  _paTableIndex = spi_read_register(FREND0) & 0x07;
+}
+
+uint8_t CC1100::get_output_power_level(void)
+{
+  return _output_power_leveldBm; 
+}
+
+
+uint8_t CC1100::get_patable_index(void)
+{
+  return _paTableIndex;
 }
 
 
