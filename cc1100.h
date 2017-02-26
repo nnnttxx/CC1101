@@ -34,7 +34,7 @@
 #define FIFOBUFFER          66  //size of Fifo Buffer
 #define RSSI_OFFSET_868MHZ  74  //dec = 74
 #define TX_RETRIES_MAX       5 //tx_retries_max
-#define ACK_TIMEOUT          100    //ACK timeout in ms
+#define ACK_TIMEOUT          250    //ACK timeout in ms
 #define CC1100_COMPARE_REGISTER 0x00  //register compare 0=no compare 1=compare
 #define BROADCAST_ADDRESS       0x00  //broadcast address
 
