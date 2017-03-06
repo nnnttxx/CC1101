@@ -40,7 +40,7 @@ void setup()
   Serial.begin(115200); Serial.println();
 
   // init CC1101 RF-module and get My_address from EEPROM
-  if (cc1100.begin(CC1100_MODE_GFSK_38_4_kb, CC1100_FREQ_868MHZ, 1, 10, 1)) // modulation mode, frequency, channel, PA level in dBm, own address
+  if (cc1100.begin(CC1100_MODE_GFSK_1_2_kb, CC1100_FREQ_868MHZ, 1, 10, 1)) // modulation mode, frequency, channel, PA level in dBm, own address
   {
 #ifndef CC1100_DEBUG
     Serial.println(F("Init successful"));

@@ -495,10 +495,12 @@ void CC1100::sidle(void)
 void CC1100::transmit(void)
 {
   uint8_t marcstate;
+  
+  wakeup();       // write patable when exiting directly from sleep
 
   spi_write_strobe(STX);								     //sends the data over air
   marcstate = 0xFF;								           //set unknown/dummy state value
-
+  
   while (marcstate != 0x01)						      //0x01 = ILDE after sending data
   {
     marcstate = (spi_read_register(MARCSTATE) & 0x1F);		 //read out state of cc1100 to be sure in IDLE and TX is finished
@@ -512,6 +514,8 @@ void CC1100::transmit(void)
 void CC1100::receive(void)
 {
   uint8_t marcstate;
+  
+  wakeup();       // write patable when exiting directly from sleep
 
   sidle();			                             //sets to idle first.
   spi_write_strobe(SRX);                     //writes receive strobe (receive mode)
@@ -595,7 +599,8 @@ uint8_t CC1100::send_packet(uint8_t my_addr, uint8_t rx_addr, uint8_t *txbuffer,
 
     while (ackWaitCounter < ACK_TIMEOUT ) 						  	//Wait for an acknowge
     {
-      if (packet_available() == TRUE)					      			//if RF package received check package acknowge
+      // WTF polling an interrupt pin
+      if (digitalRead(GDO2))					      			//if RF package received check package acknowge
       {
         uint8_t from_sender = rx_addr;                  	//the original message sender address
         clear_rx_buffer(rxbuffer);
@@ -721,23 +726,25 @@ uint8_t CC1100::check_acknowledge(uint8_t *rxbuffer, uint8_t pktlen, uint8_t sen
 #endif
       return FALSE;
     }
-    
+    else
+    {
 #if CC1100_DEBUG == 1
-    int8_t rssi_dbm = rssi_convert(rxbuffer[pktlen + 1]);
-    uint8_t lqi = lqi_convert(rxbuffer[pktlen + 2]);
-    uint8_t crc = check_crc(rxbuffer[pktlen + 2]);
-
-    Serial.println(F("ACK received!"));
-    Serial.print(F("RSSI:")); Serial.print(rssi_dbm, DEC); Serial.print(F(" "));
-    Serial.print(F("LQI:")); Serial.print(lqi, DEC); Serial.print(F(" "));
-    Serial.print(F("CRC:")); Serial.println(crc, HEX);
-    Serial.println();
+      int8_t rssi_dbm = rssi_convert(rxbuffer[pktlen + 1]);
+      uint8_t lqi = lqi_convert(rxbuffer[pktlen + 2]);
+      uint8_t crc = check_crc(rxbuffer[pktlen + 2]);
+  
+      Serial.println(F("ACK received!"));
+      Serial.print(F("RSSI:")); Serial.print(rssi_dbm, DEC); Serial.print(F(" "));
+      Serial.print(F("LQI:")); Serial.print(lqi, DEC); Serial.print(F(" "));
+      Serial.print(F("CRC:")); Serial.println(crc, HEX);
+      Serial.println();
 #endif
 
     return TRUE;
+    }
   }
   
-  return FALSE;
+  return FALSE;     // Packet received, but no ACK
 }
 
 
@@ -768,6 +775,7 @@ uint8_t CC1100::wait_for_packet(uint8_t milliseconds)
 
 uint8_t CC1100::packet_available()
 {
+  /*
   if (digitalRead(GDO2) == TRUE)														//if RF package received
   {
     if (spi_read_register(IOCFG2) == 0x06)								//if sync word detect mode is used
@@ -782,6 +790,10 @@ uint8_t CC1100::packet_available()
   }
   
   return FALSE;
+  */
+
+ 
+  return spi_read_register(RXBYTES);
 } 
 
 
@@ -1047,10 +1059,7 @@ int8_t CC1100::rssi_convert(uint8_t Rssi_hex)
   }
   else 
   {
-    if (Rssi_dec < 128) 
-    {
-      rssi_dbm = ((Rssi_dec) / 2) - RSSI_OFFSET_868MHZ;
-    }
+    rssi_dbm = ((Rssi_dec) / 2) - RSSI_OFFSET_868MHZ;
   }
   
   return rssi_dbm;

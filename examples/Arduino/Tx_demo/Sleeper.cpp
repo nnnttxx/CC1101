@@ -2,23 +2,25 @@
 
 // The interupt vector for the watch dog must be present, even if empty else the CPU resets.
 ISR(WDT_vect) {
-  // Do nothing.
+
+  MCUSR = 0x00;     // clear all reset bits
+  wdt_disable();    // stop WDT
 }
 
 /// Sleeps the arduino for a number of milliseconds
-void Sleeper::SleepMillis(long millis) {
+void Sleeper::SleepMillis(long millisec) {
 
   // OPTIONAL delay to wait for all things to finish, e.g. serial prints - else you may get garbled serial prints from sleeping before the sending has finished.
-  delay(50);
+  //delay(50);
 
   uint8_t prescalar = 0;
 
   // Sleep for the longest possible watchdog timeout that's less than millis and keep going until there are no millis left.
-  while (millis > Times[NumberOfPrescalars - 1]) {
+  while (millisec > Times[NumberOfPrescalars - 1]) {
     for (int i = 0; i < NumberOfPrescalars; ++i) {
-      if (millis > Times[i]) {
+      if (millisec > Times[i]) {
         prescalar = Prescalars[i];
-        millis -= Times[i];
+        millisec -= Times[i];
         break;
       }
     }
@@ -31,6 +33,14 @@ void Sleeper::SleepMillis(long millis) {
 /// There are many comments / notes in this function which have been copied directly from the data sheet for
 /// user convenience.
 void Sleeper::SetupWatchdog(uint8_t prescalar) {
+
+  // Turn off global interrupt
+  cli();
+
+  // assuming WDT is stopped
+  wdt_reset();      // Note:  The Watchdog Timer should be reset before any change of the WDTCSR.WDP
+  // bits, since a change in the WDTCSR.WDP bits can result in a time-out when switching to
+  // a shorter time-out period.
 
   // Prescalars can be: 0=16ms, 1=32ms, 2=64ms, 3=125ms, 4=250ms, 5=500ms, 6=1sec, 7=2sec, 8=4sec, 9=8sec
   if (prescalar > 9) {
@@ -80,7 +90,7 @@ void Sleeper::SetupWatchdog(uint8_t prescalar) {
   // safe start-up after the failure
 
   // Allow changes
-  WDTCSR = _BV(WDCE) | _BV(WDE);
+  WDTCSR |= _BV(WDCE) | _BV(WDE);
 
   // WDTCSR Bit 6 – WDIE: Watchdog Interrupt Enable
   // When this bit is written to one and the I-bit in the Status Register is set, the Watchdog Interrupt is enabled. If WDE is cleared in combination with this setting, the Watchdog Timer is in Interrupt Mode, and the corresponding interrupt is executed if time-out in the Watchdog Timer occurs. If WDE is set, the Watchdog Timer is in Interrupt and System Reset Mode. The first time-out in the Watchdog Timer will set WDIF. Executing the corresponding interrupt vector will clear WDIE and WDIF automatically by hardware (the Watchdog goes to System Reset Mode). This is useful for keeping the Watchdog Timer security while using the interrupt. To stay in Interrupt and System Reset Mode, WDIE must be set after each interrupt. This should however not be done within the interrupt service routine itself, as this might compromise the safety-function of the Watchdog System Reset mode. If the interrupt is not executed before the next time-out, a System Reset will be applied.
@@ -95,30 +105,17 @@ void Sleeper::SetupWatchdog(uint8_t prescalar) {
   //0     x   x       System Reset Mode                   Reset
 
   // Perform the change.
-  WDTCSR = _BV(WDCE) | wdtPrescalarBits | _BV(WDIE);
+  WDTCSR = wdtPrescalarBits; 
+
+  // start WDT in Interrupt Mode
+  WDTCSR |= _BV(WDIE);
+
+  // Turn on global interrupt
+  sei();
 }
 
 /// Powers down system.
 void Sleeper::DoSleep() {
-
-  /* Now is the time to set the sleep mode. In the Atmega8 datasheet
-    http://www.atmel.com/dyn/resources/prod_documents/doc2486.pdf on page 35
-    there is a list of sleep modes which explains which clocks and
-    wake up sources are available in which sleep mode.
-
-    In the avr/sleep.h file, the call names of these sleep modes are to be found:
-
-    The 5 different modes are:
-        SLEEP_MODE_IDLE         -the least power savings
-        SLEEP_MODE_ADC
-        SLEEP_MODE_PWR_SAVE
-        SLEEP_MODE_STANDBY      DO NOT use without external OSC
-        SLEEP_MODE_PWR_DOWN     -the most power savings
-
-    For now, we want as much power savings as possible, so we
-    choose the according
-    sleep mode: SLEEP_MODE_PWR_DOWN
-  */
 
   // Set the sleep mode.
   set_sleep_mode(SLEEP_MODE_PWR_DOWN);

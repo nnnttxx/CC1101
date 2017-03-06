@@ -33,7 +33,7 @@ void setup()
   Serial.begin(115200); Serial.println();
 
   // init CC1101 RF-module and get My_address from EEPROM
-  if (cc1100.begin(CC1100_MODE_GFSK_38_4_kb, CC1100_FREQ_868MHZ, 1, 10, 3))    // modulation mode, frequency, channel, PA level in dBm, own address
+  if (cc1100.begin(CC1100_MODE_GFSK_1_2_kb, CC1100_FREQ_868MHZ, 1, 10, 3))    // modulation mode, frequency, channel, PA level in dBm, own address
   {
     Serial.println(F("Init successful"));
   }
@@ -55,7 +55,7 @@ void setup()
   Serial.println(F("CC1101 RX Demo"));   //welcome message
 
   // init interrrupt function for available packet
-  attachInterrupt(digitalPinToInterrupt(GDO2), rf_available_int, HIGH);
+  attachInterrupt(digitalPinToInterrupt(GDO2), rf_available_int, RISING);
 }
 
 //---------------------------------[LOOP]-----------------------------------
@@ -85,16 +85,15 @@ void loop()
 //---------------------[ check incomming RF packet ]-----------------------
 void rf_available_int(void)
 {
-  detachInterrupt(GDO2);
-  sei();
+  detachInterrupt(digitalPinToInterrupt(GDO2));
   //uint32_t time_stamp = millis();                                   //generate time stamp
 
-  if (cc1100.packet_available() == TRUE)
+  if (cc1100.packet_available())
   {
     cc1100.get_payload(Rx_fifo, pktlen, rx_addr, sender, rssi_dbm, lqi); //stores the payload data to Rx_fifo
     cc1101_packet_available = TRUE;                                      //set flag that an package is in RX buffer
   }
   //Serial.print(F("RX duration: ")); Serial.print(millis() - time_stamp); Serial.println(F("ms")); Serial.println();
 
-  attachInterrupt(GDO2, rf_available_int, HIGH);
+  attachInterrupt(digitalPinToInterrupt(GDO2), rf_available_int, RISING);
 }
